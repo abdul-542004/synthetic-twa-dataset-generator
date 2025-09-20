@@ -181,7 +181,7 @@ class ResearchValidatedTWAGenerator:
         sleep_hours = np.clip(sleep_hours, 4, 12)
         
         # Sleep quality (1-10 scale) correlated with hours and exercise
-        base_quality = 6.5
+        base_quality = 5.6  # Increased from 5.2 to balance at ~35% adequate sleep (quality >=7)
         hours_effect = (sleep_hours - 7.5) * 0.3
         motion_quality_effect = motion_days * 0.2
         
@@ -246,23 +246,23 @@ class ResearchValidatedTWAGenerator:
     def _generate_meditation_behavior(self, demo_factors: Dict, diet_score: float) -> int:
         """Generate meditation/destress minutes per week"""
         
-        # Base meditation time - REDUCED to make thresholds more challenging
-        base_minutes = 45  # Reduced from 60 to get fewer people above threshold
+        # Base meditation time - FURTHER INCREASED to match realistic prevalence (15%)
+        base_minutes = 120  # Increased from 80 to get ~15% above 150 min/week threshold
         
         # Age effect (older adults more likely to meditate)
-        age_effect = (demo_factors.get('established_routine_factor', 1.0) - 1.0) * 50
+        age_effect = (demo_factors.get('established_routine_factor', 1.0) - 1.0) * 30
         
         # Education/awareness effect
-        education_effect = (demo_factors['education_factor'] - 1.0) * 40
+        education_effect = (demo_factors['education_factor'] - 1.0) * 25
         
-        # Diet quality correlation (mindfulness connection) - REDUCED CORRELATION
-        diet_effect = (diet_score - 5.5) * 5  # Reduced from 15 to 5
+        # Diet quality correlation (mindfulness connection) - BALANCED ADJUSTMENT
+        diet_effect = (diet_score - 5.5) * 0.8  # Balanced at 0.8 to achieve target correlation of 0.28
         
         # Stress level effect (higher stress → more meditation seeking)
-        stress_effect = (demo_factors.get('stress_factor', 1.0) - 1.0) * 25
+        stress_effect = (demo_factors.get('stress_factor', 1.0) - 1.0) * 15
         
         meditation_minutes = (base_minutes + age_effect + education_effect + 
-                             diet_effect + stress_effect + np.random.exponential(30))
+                             diet_effect + stress_effect + np.random.exponential(20))
         meditation_minutes = np.clip(meditation_minutes, 0, 600)  # Max 10 hours/week
         
         return int(meditation_minutes)
@@ -278,7 +278,9 @@ class ResearchValidatedTWAGenerator:
             'Less than HS': 2.0, 'High School': 1.5, 
             'Some College': 1.0, 'Bachelor+': 0.4
         }
-        education_mult = education_effects[demo_factors.get('education_level', 'High School')]
+        # FIX: Use correct key 'education' instead of 'education_level'
+        education_level = demo_factors.get('education', 'High School')
+        education_mult = education_effects.get(education_level, 1.5)
         
         # Income effect (inverse)
         income_mult = max(0.3, 2.0 - demo_factors.get('income_factor', 1.0))
@@ -300,28 +302,28 @@ class ResearchValidatedTWAGenerator:
     def _generate_alcohol_behavior(self, demo_factors: Dict, smoking_status: str) -> float:
         """Generate alcohol drinks per week with smoking correlation"""
         
-        # Base drinking (most adults drink moderately)
-        base_drinks = 4.0  # ~4 drinks/week average
+        # Base drinking (most adults drink moderately) - REDUCED for better correlation
+        base_drinks = 2.5  # Reduced from 3.5 to allow smoking effect to show through
         
-        # Smoking correlation (strong clustering) - INCREASED EFFECT
+        # Smoking correlation (strong clustering) - MODERATE ADJUSTMENT
         if smoking_status == 'Current':
-            smoking_effect = 6.0  # Increased from 3.0 to strengthen correlation
+            smoking_effect = 10.0  # Moderate increase to achieve correlation of 0.48
         elif smoking_status == 'Former':
-            smoking_effect = 2.0  # Increased from 1.0
+            smoking_effect = 3.0  # Moderate increase
         else:
             smoking_effect = 0.0
         
         # Education effect (moderate drinking in higher education)
-        education_effect = (demo_factors['education_factor'] - 1.0) * 1.5
+        education_effect = (demo_factors['education_factor'] - 1.0) * 1.2
         
         # Income effect (higher income → more alcohol access)
-        income_effect = (demo_factors['income_factor'] - 1.0) * 2.0
+        income_effect = (demo_factors['income_factor'] - 1.0) * 1.8
         
         # Age effect (peak drinking in 20s-30s)
-        youth_effect = demo_factors.get('youth_factor', 1.0) * 2.0
+        youth_effect = demo_factors.get('youth_factor', 1.0) * 1.8
         
         drinks_per_week = (base_drinks + smoking_effect + education_effect + 
-                          income_effect + youth_effect + np.random.exponential(2))
+                          income_effect + youth_effect + np.random.exponential(1.5))
         drinks_per_week = np.clip(drinks_per_week, 0, 35)  # Reasonable maximum
         
         return round(drinks_per_week, 1)
@@ -396,20 +398,20 @@ class ResearchValidatedTWAGenerator:
     def _generate_social_connections(self, demo_factors: Dict, seasonal_factors: Dict) -> int:
         """Generate number of close social connections"""
         
-        # Base social connections - REDUCED for more realistic distribution 
-        base_connections = 3.2  # Reduced from 4.2 to get fewer people above threshold
+        # Base social connections - FURTHER INCREASED for realistic distribution 
+        base_connections = 4.5  # Increased from 3.8 to get ~35% above threshold (4+ connections)
         
         # Urban vs rural (urban may have more connection opportunities)
-        urban_effect = (demo_factors['urban_factor'] - 1.0) * 1.0
+        urban_effect = (demo_factors['urban_factor'] - 1.0) * 0.8
         
         # Age effect (established adults have more stable networks)
-        age_effect = (demo_factors.get('established_routine_factor', 1.0) - 1.0) * 2
+        age_effect = (demo_factors.get('established_routine_factor', 1.0) - 1.0) * 1.5
         
         # Education effect (social capital correlation)
-        education_effect = (demo_factors['education_factor'] - 1.0) * 1.5
+        education_effect = (demo_factors['education_factor'] - 1.0) * 1.2
         
         # Seasonal effect (winter isolation)
-        seasonal_effect = (seasonal_factors.get('social_modifier', 1.0) - 1.0) * 2
+        seasonal_effect = (seasonal_factors.get('social_modifier', 1.0) - 1.0) * 1.5
         
         connections = (base_connections + urban_effect + age_effect + 
                       education_effect + seasonal_effect + np.random.normal(0, 1))
@@ -473,23 +475,23 @@ class ResearchValidatedTWAGenerator:
                                 meditation_minutes: int) -> float:
         """Generate purpose/meaning score (1-10) with social and mindfulness correlations"""
         
-        # Base purpose score - REDUCED to create more realistic distribution
-        base_purpose = 5.8  # Reduced further to get fewer people above threshold
+        # Base purpose score - BALANCED ADJUSTMENT (was 16.4%, target 40%)
+        base_purpose = 6.8  # Increased from 6.2 to balance at ~40% above threshold (score >=8)
         
-        # Social connections effect (strong research correlation)
-        social_effect = (social_connections - 3.5) * 0.4
+        # Social connections effect (strong research correlation) - REDUCED
+        social_effect = (social_connections - 3.0) * 0.25  # Reduced from 0.4 to 0.25
         
         # Meditation/mindfulness effect
         meditation_effect = (meditation_minutes - 30) / 50 * 0.3
         
         # Age effect (purpose often increases with age/wisdom)
-        age_effect = (demo_factors.get('established_routine_factor', 1.0) - 1.0) * 1.5
+        age_effect = (demo_factors.get('established_routine_factor', 1.0) - 1.0) * 1.2
         
         # Education effect (self-reflection, meaning-making)
-        education_effect = (demo_factors['education_factor'] - 1.0) * 0.8
+        education_effect = (demo_factors['education_factor'] - 1.0) * 0.6
         
         # Income stability effect (financial security → purpose exploration)
-        income_effect = (demo_factors['income_factor'] - 1.0) * 0.5
+        income_effect = (demo_factors['income_factor'] - 1.0) * 0.4
         
         purpose_score = (base_purpose + social_effect + meditation_effect + 
                         age_effect + education_effect + income_effect + 

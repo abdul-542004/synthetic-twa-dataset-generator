@@ -140,30 +140,30 @@ class WellnessAgingOutcomeGenerator:
         effects = self.research_effects['biological_age_effects']
         annual_age_modification = 0.0
         
-        # Apply protective effects (Do More behaviors) - FIXED THRESHOLDS
-        if twa_behaviors['motion_days_week'] >= 3:
+        # Apply protective effects (Do More behaviors) - FIXED THRESHOLDS FOR REALISTIC PREVALENCE
+        if twa_behaviors['motion_days_week'] >= 5:  # Increased from 3 to match 28% prevalence target
             annual_age_modification += effects['motion_high']
             
-        if twa_behaviors['diet_mediterranean_score'] >= 6:  # Lowered from 7
+        if twa_behaviors['diet_mediterranean_score'] >= 7:  # Increased from 6 to match 22% prevalence target
             annual_age_modification += effects['diet_mediterranean']
             
-        if twa_behaviors['meditation_minutes_week'] >= 60:  # Lowered from 150
+        if twa_behaviors['meditation_minutes_week'] >= 150:  # Increased from 60 to match 15% prevalence target
             annual_age_modification += effects['meditation_regular']
             
         if twa_behaviors['sleep_hours'] >= 7 and twa_behaviors['sleep_quality_score'] >= 6:
             sleep_bonus_hours = max(0, twa_behaviors['sleep_quality_score'] - 6)
             annual_age_modification += effects['sleep_quality'] * sleep_bonus_hours
             
-        if twa_behaviors['purpose_meaning_score'] >= 6:  # Lowered from 8
+        if twa_behaviors['purpose_meaning_score'] >= 8:  # Increased from 6 to match realistic prevalence
             annual_age_modification += effects['purpose_high']
             
-        if twa_behaviors['social_connections_count'] >= 3:  # Lowered from 4
+        if twa_behaviors['social_connections_count'] >= 4:  # Increased from 3 to match realistic prevalence
             annual_age_modification += effects['social_connected']
             
         if twa_behaviors['nature_minutes_week'] >= 120:  # 2+ hours/week
             annual_age_modification += effects['nature_connection']
             
-        if twa_behaviors['cultural_hours_week'] >= 3:  # Lowered from 5
+        if twa_behaviors['cultural_hours_week'] >= 5:  # Increased from 3
             annual_age_modification += effects['cultural_engagement']
         
         # Apply risk effects (Do Less behaviors) - FIXED SIGNS
@@ -192,12 +192,22 @@ class WellnessAgingOutcomeGenerator:
         if (twa_behaviors['sleep_hours'] < 6 or twa_behaviors['sleep_quality_score'] < 5):
             annual_age_modification += effects['sleep_poor']
         
-        # Calculate cumulative effect over time
-        monthly_effect = annual_age_modification / 12  # Convert annual effect to monthly
-        cumulative_effect = monthly_effect * months_elapsed
+        # FIXED: Convert annual effect to monthly and apply diminishing returns
+        # Use logarithmic scaling to prevent extreme effects
+        if annual_age_modification != 0:
+            # Apply diminishing returns for multiple interventions
+            sign = 1 if annual_age_modification > 0 else -1
+            abs_effect = abs(annual_age_modification)
+            # Stronger diminishing returns: each additional intervention has much less impact
+            adjusted_effect = sign * (abs_effect ** 0.5)  # Square root for stronger diminishing returns
+            
+            monthly_effect = adjusted_effect / 12  # Convert annual to monthly
+            cumulative_effect = monthly_effect * months_elapsed
+        else:
+            cumulative_effect = 0
         
-        # Natural aging progression
-        natural_aging = months_elapsed / 12
+        # Natural aging progression (reduced to account for intervention effects)
+        natural_aging = months_elapsed / 12 * 0.8  # Slightly less than 1 year per year
         
         biological_age = base_bio_age + natural_aging + cumulative_effect
         

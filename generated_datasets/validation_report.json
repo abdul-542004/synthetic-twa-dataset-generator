@@ -86,30 +86,30 @@
         },
         "regular_meditation": {
           "expected": 0.15,
-          "actual": 0.026,
-          "difference": -0.124,
-          "percent_error": 82.66666666666667,
+          "actual": 0.348,
+          "difference": 0.19799999999999998,
+          "percent_error": 131.99999999999997,
           "status": "poor"
         },
         "adequate_sleep": {
           "expected": 0.35,
-          "actual": 0.716,
-          "difference": 0.366,
-          "percent_error": 104.57142857142858,
+          "actual": 0.431,
+          "difference": 0.08100000000000002,
+          "percent_error": 23.14285714285715,
           "status": "poor"
         },
         "strong_social_support": {
           "expected": 0.35,
-          "actual": 0.02,
-          "difference": -0.32999999999999996,
-          "percent_error": 94.28571428571428,
+          "actual": 0.47,
+          "difference": 0.12,
+          "percent_error": 34.285714285714285,
           "status": "poor"
         },
         "high_life_purpose": {
           "expected": 0.4,
-          "actual": 0.006,
-          "difference": -0.394,
-          "percent_error": 98.5,
+          "actual": 0.607,
+          "difference": 0.20699999999999996,
+          "percent_error": 51.749999999999986,
           "status": "poor"
         },
         "current_smoking": {
@@ -121,10 +121,10 @@
         },
         "heavy_drinking": {
           "expected": 0.12,
-          "actual": 0.088,
-          "difference": -0.032,
-          "percent_error": 26.666666666666668,
-          "status": "poor"
+          "actual": 0.127,
+          "difference": 0.007000000000000006,
+          "percent_error": 5.833333333333339,
+          "status": "acceptable"
         }
       }
     },
@@ -134,15 +134,15 @@
         "biological_age_acceleration": {
           "mean": {
             "expected": 0.0,
-            "actual": -1.0880999999999998,
-            "difference": -1.0880999999999998,
+            "actual": 0.8195,
+            "difference": 0.8195,
             "percent_error": Infinity,
             "status": "poor"
           },
           "std": {
             "expected": 3.5,
-            "actual": 4.5666467624125096,
-            "status": "acceptable"
+            "actual": 2.5862595555141965,
+            "status": "good"
           },
           "range": {
             "expected": [
@@ -150,24 +150,24 @@
               15
             ],
             "actual": [
-              -13.3,
-              12.8
+              -5.8,
+              7.6
             ],
-            "status": "acceptable"
+            "status": "excellent"
           }
         },
         "mortality_risk_score": {
           "mean": {
             "expected": 0.015,
-            "actual": 0.013906700000000001,
-            "difference": -0.0010932999999999984,
-            "percent_error": 7.288666666666657,
-            "status": "acceptable"
+            "actual": 0.008200299999999999,
+            "difference": -0.0067997000000000005,
+            "percent_error": 45.33133333333334,
+            "status": "poor"
           },
           "std": {
             "expected": 0.025,
-            "actual": 0.01780133569883627,
-            "status": "good"
+            "actual": 0.009490875967824922,
+            "status": "acceptable"
           },
           "range": {
             "expected": [
@@ -176,7 +176,7 @@
             ],
             "actual": [
               0.001,
-              0.1936
+              0.077
             ],
             "status": "excellent"
           }
@@ -184,14 +184,14 @@
         "crp_mg_l": {
           "mean": {
             "expected": 1.5,
-            "actual": 1.85088,
-            "difference": 0.3508800000000001,
-            "percent_error": 23.392000000000003,
+            "actual": 1.87061,
+            "difference": 0.3706100000000001,
+            "percent_error": 24.707333333333338,
             "status": "poor"
           },
           "std": {
             "expected": 1.2,
-            "actual": 0.9606465882245496,
+            "actual": 0.9589008388351314,
             "status": "good"
           },
           "range": {
@@ -201,7 +201,7 @@
             ],
             "actual": [
               0.31,
-              7.42
+              7.28
             ],
             "status": "excellent"
           }
@@ -209,14 +209,14 @@
         "il6_pg_ml": {
           "mean": {
             "expected": 2.8,
-            "actual": 3.2854,
-            "difference": 0.4854000000000003,
-            "percent_error": 17.335714285714296,
-            "status": "poor"
+            "actual": 3.0286999999999997,
+            "difference": 0.2286999999999999,
+            "percent_error": 8.167857142857141,
+            "status": "acceptable"
           },
           "std": {
             "expected": 1.8,
-            "actual": 1.1928074570648985,
+            "actual": 1.1770691576121608,
             "status": "acceptable"
           },
           "range": {
@@ -225,8 +225,8 @@
               15
             ],
             "actual": [
-              1.0,
-              11.6
+              0.7,
+              11.7
             ],
             "status": "excellent"
           }
@@ -234,14 +234,14 @@
         "grip_strength_kg": {
           "mean": {
             "expected": 35,
-            "actual": 30.1782,
-            "difference": -4.8218,
-            "percent_error": 13.776571428571426,
+            "actual": 29.0415,
+            "difference": -5.958500000000001,
+            "percent_error": 17.024285714285718,
             "status": "poor"
           },
           "std": {
             "expected": 12,
-            "actual": 12.645280854448743,
+            "actual": 11.914098937960164,
             "status": "excellent"
           },
           "range": {
@@ -251,7 +251,7 @@
             ],
             "actual": [
               10.0,
-              70.0
+              63.6
             ],
             "status": "excellent"
           }
@@ -259,14 +259,14 @@
         "life_satisfaction_score": {
           "mean": {
             "expected": 6.5,
-            "actual": 7.0795,
-            "difference": 0.5795000000000003,
-            "percent_error": 8.915384615384621,
-            "status": "acceptable"
+            "actual": 7.999700000000001,
+            "difference": 1.4997000000000007,
+            "percent_error": 23.072307692307703,
+            "status": "poor"
           },
           "std": {
             "expected": 1.8,
-            "actual": 1.1698796384108787,
+            "actual": 1.1076627766729488,
             "status": "acceptable"
           },
           "range": {
@@ -275,8 +275,8 @@
               10
             ],
             "actual": [
-              3.6,
-              11.0
+              4.4,
+              11.9
             ],
             "status": "excellent"
           }
@@ -312,8 +312,8 @@
         },
         "diet_meditation": {
           "expected": 0.28,
-          "actual": 0.6083963842430603,
-          "difference": 0.3283963842430603,
+          "actual": 0.5455870479049094,
+          "difference": 0.2655870479049094,
           "acceptable_range": [
             0.2,
             0.35
@@ -324,8 +324,8 @@
         },
         "social_purpose": {
           "expected": 0.31,
-          "actual": 0.4492607781969439,
-          "difference": 0.13926077819694388,
+          "actual": 0.409220657193971,
+          "difference": 0.099220657193971,
           "acceptable_range": [
             0.25,
             0.38
@@ -336,8 +336,8 @@
         },
         "smoking_drinking": {
           "expected": 0.48,
-          "actual": 0.03142408836939563,
-          "difference": -0.44857591163060434,
+          "actual": 0.042128400942631164,
+          "difference": -0.43787159905736883,
           "acceptable_range": [
             0.4,
             0.55
@@ -348,8 +348,8 @@
         },
         "purpose_mortality_risk": {
           "expected": -0.35,
-          "actual": -0.04038253795979148,
-          "difference": 0.3096174620402085,
+          "actual": -0.030057189523854864,
+          "difference": 0.3199428104761451,
           "acceptable_range": [
             -0.45,
             -0.25
@@ -360,8 +360,8 @@
         },
         "exercise_biological_age": {
           "expected": -0.25,
-          "actual": -0.4517865912855202,
-          "difference": -0.20178659128552018,
+          "actual": -0.4714148663183469,
+          "difference": -0.2214148663183469,
           "acceptable_range": [
             -0.35,
             -0.15
@@ -372,8 +372,8 @@
         },
         "age_frailty": {
           "expected": 0.45,
-          "actual": 0.5732524595049416,
-          "difference": 0.12325245950494162,
+          "actual": 0.6705912531022634,
+          "difference": 0.2205912531022634,
           "acceptable_range": [
             0.35,
             0.55
@@ -389,8 +389,8 @@
       "validations": {
         "high_exercise_effect": {
           "expected": -1.2,
-          "actual": -5.876617719848209,
-          "difference": -4.676617719848209,
+          "actual": -3.5867777594456363,
+          "difference": -2.3867777594456365,
           "acceptable_range": [
             -2.0,
             -0.5
@@ -401,8 +401,8 @@
         },
         "mediterranean_diet_effect": {
           "expected": -2.3,
-          "actual": -9.955218216318785,
-          "difference": -7.655218216318786,
+          "actual": -6.259013282732448,
+          "difference": -3.959013282732448,
           "acceptable_range": [
             -3.0,
             -1.5
@@ -413,8 +413,8 @@
         },
         "smoking_effect": {
           "expected": 5.3,
-          "actual": 0.007145753678600597,
-          "difference": -5.292854246321399,
+          "actual": 0.04782759819256199,
+          "difference": -5.252172401807438,
           "acceptable_range": [
             4.0,
             7.0

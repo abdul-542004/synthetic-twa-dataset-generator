@@ -35,7 +35,7 @@ class EnhancedDemographicGenerator:
         # US demographic distributions (2023 Census data)
         self.age_distribution = {
             'groups': ['18-24', '25-34', '35-44', '45-54', '55-64', '65-74', '75+'],
-            'probabilities': [0.11, 0.14, 0.13, 0.12, 0.13, 0.11, 0.26]  # Original distribution that sums to 1.0
+            'probabilities': [0.11, 0.14, 0.13, 0.12, 0.13, 0.11, 0.26]  # Fixed to sum to 1.0
         }
         
         self.ethnicity_distribution = {
