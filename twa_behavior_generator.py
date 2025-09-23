@@ -114,6 +114,7 @@ class ResearchValidatedTWAGenerator:
             'Bachelor+': 1.25
         }
         factors['education_factor'] = education_effects[demographics['education']]
+        factors['education_level'] = demographics['education']  # ADDED: Pass actual education level
         
         # Income effects
         income_effects = {
@@ -143,10 +144,10 @@ class ResearchValidatedTWAGenerator:
         return factors
     
     def _generate_motion_behavior(self, demo_factors: Dict, seasonal_factors: Dict) -> int:
-        """Generate motion/exercise days per week with demographic and seasonal effects"""
+        """Generate motion/exercise days per week with demographic and seasonal effects - CORRECTED"""
         
-        # Base motion days influenced by fitness level and demographics
-        base_days = 2.5  # National average ~2.5 days/week vigorous activity
+        # FIXED: Base motion days increased to achieve 28% meeting guidelines (3+ days/week)
+        base_days = 3.0  # Increased from 2.5 to get more people meeting guidelines
         
         # Apply demographic factors
         adjusted_days = (base_days * 
@@ -218,10 +219,10 @@ class ResearchValidatedTWAGenerator:
     
     def _generate_diet_behavior(self, demo_factors: Dict, motion_days: int, 
                               seasonal_factors: Dict) -> float:
-        """Generate Mediterranean diet adherence score (0-10)"""
+        """Generate Mediterranean diet adherence score (0-10) - CORRECTED"""
         
-        # Base diet score
-        base_score = 5.5  # Below optimal average
+        # FIXED: Base diet score increased to achieve 22% high diet quality (score >=7)
+        base_score = 6.2  # Increased from 5.5 to get more people above threshold
         
         # Education and income strongly predict diet quality
         education_effect = (demo_factors['education_factor'] - 1.0) * 2.0
@@ -244,10 +245,10 @@ class ResearchValidatedTWAGenerator:
         return round(diet_score, 1)
     
     def _generate_meditation_behavior(self, demo_factors: Dict, diet_score: float) -> int:
-        """Generate meditation/destress minutes per week"""
+        """Generate meditation/destress minutes per week - CORRECTED"""
         
-        # Base meditation time - FURTHER INCREASED to match realistic prevalence (15%)
-        base_minutes = 120  # Increased from 80 to get ~15% above 150 min/week threshold
+        # FIXED: Base meditation time REDUCED to match realistic prevalence (15%)
+        base_minutes = 60  # Reduced from 120 to get ~15% above 150 min/week threshold
         
         # Age effect (older adults more likely to meditate)
         age_effect = (demo_factors.get('established_routine_factor', 1.0) - 1.0) * 30
@@ -268,7 +269,7 @@ class ResearchValidatedTWAGenerator:
         return int(meditation_minutes)
     
     def _generate_smoking_behavior(self, demo_factors: Dict) -> str:
-        """Generate smoking status with demographic correlations"""
+        """Generate smoking status with demographic correlations - FIXED"""
         
         # Base smoking rates by demographics
         base_current_rate = 0.14  # ~14% current US smoking rate
@@ -278,9 +279,8 @@ class ResearchValidatedTWAGenerator:
             'Less than HS': 2.0, 'High School': 1.5, 
             'Some College': 1.0, 'Bachelor+': 0.4
         }
-        # FIX: Use correct key 'education' instead of 'education_level'
-        education_level = demo_factors.get('education', 'High School')
-        education_mult = education_effects.get(education_level, 1.5)
+        # FIX: Get education directly from demo_factors
+        education_mult = education_effects.get(demo_factors.get('education_level', 'High School'), 1.5)
         
         # Income effect (inverse)
         income_mult = max(0.3, 2.0 - demo_factors.get('income_factor', 1.0))
@@ -291,36 +291,40 @@ class ResearchValidatedTWAGenerator:
         current_prob = base_current_rate * education_mult * income_mult * youth_mult
         current_prob = min(0.60, current_prob)  # Cap at 60%
         
-        # Former smoker probability (about 25% of adults)
-        former_prob = 0.25 * (1 + (demo_factors.get('established_routine_factor', 1.0) - 1.0))
+        # Former smoker probability (about 22% of adults) - CORRECTED
+        former_prob = 0.22 * (1 + (demo_factors.get('established_routine_factor', 1.0) - 1.0))
         
+        # Ensure probabilities are valid
+        if current_prob + former_prob > 0.95:
+            former_prob = 0.95 - current_prob
+            
         never_prob = 1 - current_prob - former_prob
         
         return np.random.choice(['Never', 'Former', 'Current'], 
                                p=[never_prob, former_prob, current_prob])
     
     def _generate_alcohol_behavior(self, demo_factors: Dict, smoking_status: str) -> float:
-        """Generate alcohol drinks per week with smoking correlation"""
+        """Generate alcohol drinks per week with smoking correlation - CRITICAL FIX"""
         
-        # Base drinking (most adults drink moderately) - REDUCED for better correlation
-        base_drinks = 2.5  # Reduced from 3.5 to allow smoking effect to show through
+        # FIXED: Base drinking REDUCED and smoking effect INCREASED for proper correlation
+        base_drinks = 1.0  # Significantly reduced to allow smoking effect to dominate
         
-        # Smoking correlation (strong clustering) - MODERATE ADJUSTMENT
+        # Smoking correlation (strong clustering) - CRITICAL ADJUSTMENT for 0.48 correlation
         if smoking_status == 'Current':
-            smoking_effect = 10.0  # Moderate increase to achieve correlation of 0.48
+            smoking_effect = 16.0  # Dramatically increased to achieve correlation of 0.48
         elif smoking_status == 'Former':
-            smoking_effect = 3.0  # Moderate increase
+            smoking_effect = 8.0   # Strong increase
         else:
             smoking_effect = 0.0
         
-        # Education effect (moderate drinking in higher education)
-        education_effect = (demo_factors['education_factor'] - 1.0) * 1.2
+        # Education effect (moderate drinking in higher education) - REDUCED
+        education_effect = (demo_factors['education_factor'] - 1.0) * 0.5  # Reduced from 1.2
         
-        # Income effect (higher income → more alcohol access)
-        income_effect = (demo_factors['income_factor'] - 1.0) * 1.8
+        # Income effect (higher income → more alcohol access) - REDUCED
+        income_effect = (demo_factors['income_factor'] - 1.0) * 0.8  # Reduced from 1.8
         
-        # Age effect (peak drinking in 20s-30s)
-        youth_effect = demo_factors.get('youth_factor', 1.0) * 1.8
+        # Age effect (peak drinking in 20s-30s) - REDUCED
+        youth_effect = demo_factors.get('youth_factor', 1.0) * 1.0  # Reduced from 1.8
         
         drinks_per_week = (base_drinks + smoking_effect + education_effect + 
                           income_effect + youth_effect + np.random.exponential(1.5))
@@ -473,10 +477,10 @@ class ResearchValidatedTWAGenerator:
     
     def _generate_purpose_meaning(self, demo_factors: Dict, social_connections: int, 
                                 meditation_minutes: int) -> float:
-        """Generate purpose/meaning score (1-10) with social and mindfulness correlations"""
+        """Generate purpose/meaning score (1-10) with social and mindfulness correlations - CORRECTED"""
         
-        # Base purpose score - BALANCED ADJUSTMENT (was 16.4%, target 40%)
-        base_purpose = 6.8  # Increased from 6.2 to balance at ~40% above threshold (score >=8)
+        # FIXED: Base purpose score REDUCED to balance at ~40% above threshold (score >=8)
+        base_purpose = 6.4  # Reduced from 6.8 to achieve 40% high purpose target
         
         # Social connections effect (strong research correlation) - REDUCED
         social_effect = (social_connections - 3.0) * 0.25  # Reduced from 0.4 to 0.25

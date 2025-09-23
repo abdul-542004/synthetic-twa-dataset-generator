@@ -1,8 +1,5 @@
 Variable,Category,Description,Data_Type,Range/Values
 subject_id,Identifier,Unique subject identifier,String,SYNTH_000000 to SYNTH_999999
-month,Time,Month since baseline (0-11),Integer,0-11
-season,Time,Season of observation,String,"Winter, Spring, Summer, Fall"
-observation_date,Time,Date of observation,Date,2024-01-15 to 2024-12-15
 age_group,Demographics,Age group category,String,"18-24, 25-34, 35-44, 45-54, 55-64, 65-74, 75+"
 age_numeric,Demographics,Age in years,Integer,18-90
 gender,Demographics,Gender identity,String,"Male, Female, Non-binary"
@@ -16,41 +13,48 @@ region,Other,Variable description not specified,object,Various
 urban_rural,Other,Variable description not specified,object,Various
 occupation,Other,Variable description not specified,object,Various
 marital_status,Other,Variable description not specified,object,Various
-household_size,Other,Variable description not specified,int32,Various
+household_size,Other,Variable description not specified,int64,1 to 5
+month,Time,Month since baseline (0-11),Integer,0-11
+season,Time,Season of observation,String,"Winter, Spring, Summer, Fall"
+observation_date,Time,Date of observation,Date,2024-01-15 to 2024-12-15
+months_since_baseline,Other,Variable description not specified,int64,0 to 11
+age_at_observation,Other,Variable description not specified,float64,18.0 to 90.91666666666667
 motion_days_week,TWA - Do More,Days per week of vigorous physical activity,Integer,0-7
 sleep_hours,TWA - Do More,Average sleep hours per night,Float,4.0-12.0
 sleep_quality_score,TWA - Do More,Sleep quality rating (1-10 scale),Float,1.0-10.0
-hydration_cups_day,TWA - Do More,Cups of water per day,Float,4.0-16.0
 diet_mediterranean_score,TWA - Do More,Mediterranean diet adherence (0-10 scale),Float,0.0-10.0
 meditation_minutes_week,TWA - Do More,Minutes of meditation/mindfulness per week,Integer,0-600
+hydration_cups_day,TWA - Do More,Cups of water per day,Float,4.0-16.0
+social_connections_count,Connection & Purpose,Number of close social relationships,Integer,0-12
+nature_minutes_week,Connection & Purpose,Minutes spent in nature per week,Integer,0-600
+cultural_hours_week,Connection & Purpose,Hours of cultural activities per week,Float,0.0-30.0
+purpose_meaning_score,Connection & Purpose,Life purpose and meaning (1-10 scale),Float,1.0-10.0
 smoking_status,TWA - Do Less,Current smoking status,String,"Never, Former, Current"
 alcohol_drinks_week,TWA - Do Less,Alcoholic drinks per week,Float,0.0-35.0
 added_sugar_grams_day,TWA - Do Less,Added sugar grams per day,Float,10.0-200.0
 sodium_grams_day,TWA - Do Less,Sodium grams per day,Float,1.5-8.0
 processed_food_servings_week,TWA - Do Less,Ultra-processed food servings per week,Integer,0-40
-social_connections_count,Connection & Purpose,Number of close social relationships,Integer,0-12
-nature_minutes_week,Connection & Purpose,Minutes spent in nature per week,Integer,0-600
-cultural_hours_week,Connection & Purpose,Hours of cultural activities per week,Float,0.0-30.0
-purpose_meaning_score,Connection & Purpose,Life purpose and meaning (1-10 scale),Float,1.0-10.0
 biological_age_years,Aging Outcomes,Biological age in years,Float,18.0-120.0
 biological_age_acceleration,Aging Outcomes,Biological age minus chronological age,Float,-10.0-15.0
-mortality_risk_score,Aging Outcomes,Annual mortality risk probability,Float,0.001-0.200
-estimated_lifespan_years,Aging Outcomes,Estimated total lifespan,Float,60.0-120.0
 crp_mg_l,Biomarkers,C-reactive protein (mg/L),Float,0.1-10.0
 il6_pg_ml,Biomarkers,Interleukin-6 (pg/mL),Float,0.5-15.0
 igf1_ng_ml,Biomarkers,IGF-1 (ng/mL),Float,50.0-400.0
-gdf15_pg_ml,Other,Variable description not specified,float64,301.0 to 3000.0
+gdf15_pg_ml,Other,Variable description not specified,float64,605.8289431623443 to 3000.0
 cortisol_ug_dl,Biomarkers,Cortisol (μg/dL),Float,3.0-25.0
 grip_strength_kg,Functional,Grip strength (kg),Float,10.0-70.0
 gait_speed_ms,Functional,Gait speed (m/s),Float,0.4-2.0
-balance_score,Other,Variable description not specified,float64,20.3 to 100.0
+balance_score,Other,Variable description not specified,float64,31.61881259292901 to 100.0
 frailty_index,Functional,Frailty index (0-1 scale),Float,0.0-0.7
-cognitive_composite_score,Other,Variable description not specified,float64,49.6 to 126.6
-processing_speed_score,Other,Variable description not specified,float64,20.0 to 114.8
+cognitive_composite_score,Other,Variable description not specified,float64,46.0 to 127.3
+processing_speed_score,Other,Variable description not specified,float64,38.65021550818969 to 112.1
+mortality_risk_score,Aging Outcomes,Annual mortality risk probability,Float,0.001-0.200
+estimated_lifespan_years,Aging Outcomes,Estimated total lifespan,Float,60.0-120.0
 life_satisfaction_score,Psychosocial,Life satisfaction (1-10 scale),Float,1.0-10.0
 stress_level_score,Psychosocial,Perceived stress level (1-10 scale),Float,1.0-10.0
-depression_risk_score,Other,Variable description not specified,float64,1.0 to 6.8
-social_support_score,Other,Variable description not specified,float64,2.3 to 10.0
+depression_risk_score,Other,Variable description not specified,float64,1.0 to 4.544915665968012
+social_support_score,Other,Variable description not specified,float64,3.1966568663975443 to 10.0
+healthy_aging_profile,Composite,Healthy aging composite score (0-100),Float,0.0-100.0
+blue_zone_similarity_score,Composite,Blue Zone lifestyle similarity (0-100),Float,0.0-100.0
 meets_exercise_guidelines,Other,Variable description not specified,bool,Various
 meets_sleep_guidelines,Other,Variable description not specified,bool,Various
 high_diet_quality,Other,Variable description not specified,bool,Various
@@ -59,9 +63,5 @@ strong_social_support,Other,Variable description not specified,bool,Various
 high_purpose,Other,Variable description not specified,bool,Various
 heavy_drinking,Other,Variable description not specified,bool,Various
 current_smoker,Other,Variable description not specified,bool,Various
-healthy_aging_profile,Composite,Healthy aging composite score (0-100),Float,0.0-100.0
-blue_zone_similarity_score,Composite,Blue Zone lifestyle similarity (0-100),Float,0.0-100.0
-months_since_baseline,Other,Variable description not specified,int64,0 to 11
-age_at_observation,Other,Variable description not specified,float64,18.0 to 90.91666666666667
-total_weekly_exercise_minutes,Other,Variable description not specified,int64,0 to 270
-total_wellness_score,Other,Variable description not specified,float64,30.98458538718182 to 90.90815740238361
+total_weekly_exercise_minutes,Other,Variable description not specified,int64,0 to 315
+total_wellness_score,Other,Variable description not specified,float64,25.8169886938327 to 110.61767192892286

@@ -11,7 +11,7 @@ from typing import Dict
 import os
 import sys
 
-from longitudinal_generator import LongitudinalTWADataGenerator
+from enhanced_longitudinal_generator import EnhancedLongitudinalTWADataGenerator
 from validation_framework import DatasetValidator
 
 
@@ -43,8 +43,8 @@ def main():
     os.makedirs(config['output_dir'], exist_ok=True)
     
     # Initialize generator
-    print(f"\nInitializing dataset generator...")
-    generator = LongitudinalTWADataGenerator(random_seed=config['random_seed'])
+    print(f"\nInitializing enhanced dataset generator...")
+    generator = EnhancedLongitudinalTWADataGenerator(random_seed=config['random_seed'])
     
     # Generate complete dataset
     print(f"\nGenerating complete dataset...")

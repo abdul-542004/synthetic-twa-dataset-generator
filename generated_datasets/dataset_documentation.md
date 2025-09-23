@@ -3,7 +3,7 @@
 ## Dataset Overview
 
 **Dataset Name**: Enhanced Synthetic US Wellness & Aging Dataset  
-**Generation Date**: 2025-09-21 02:38:56  
+**Generation Date**: 2025-09-24 01:58:29  
 **Version**: 1.0  
 **Total Subjects**: 1,000  
 **Total Observations**: 12,000  
@@ -88,8 +88,8 @@ The dataset maintains research-validated correlations and effect sizes from long
 
 ### Validation Results
 - **Overall Quality**: POOR
-- **Excellent Validations**: 3.3%
-- **Good Validations**: 10.0%
+- **Excellent Validations**: 6.7%
+- **Good Validations**: 0.0%
 - **Total Validations Performed**: 30
 
 ## Usage Guidelines
@@ -134,7 +134,7 @@ The dataset maintains research-validated correlations and effect sizes from long
 
 When using this dataset, please cite:
 
-*Enhanced Synthetic US Wellness & Aging Dataset: Research-Grounded TWA Impact Framework. Generated 2025-09-21. Integrates expert consensus biomarkers of aging with validated lifestyle intervention effect sizes from longevity research.*
+*Enhanced Synthetic US Wellness & Aging Dataset: Research-Grounded TWA Impact Framework. Generated 2025-09-24. Integrates expert consensus biomarkers of aging with validated lifestyle intervention effect sizes from longevity research.*
 
 ## Contact and Support
 
@@ -142,6 +142,6 @@ For questions about dataset generation methods, validation procedures, or resear
 
 ---
 
-**Generated**: 2025-09-21 02:38:56  
+**Generated**: 2025-09-24 01:58:29  
 **Version**: 1.0  
 **Format**: Longitudinal research-grade synthetic dataset

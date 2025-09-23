@@ -32,10 +32,10 @@ class EnhancedDemographicGenerator:
             'income_healthcare_access': 0.44    # Higher income → Better healthcare
         }
         
-        # US demographic distributions (2023 Census data)
+        # US demographic distributions (2023 Census data) - CORRECTED TO SUM TO 1.0
         self.age_distribution = {
             'groups': ['18-24', '25-34', '35-44', '45-54', '55-64', '65-74', '75+'],
-            'probabilities': [0.11, 0.14, 0.13, 0.12, 0.13, 0.11, 0.26]  # Fixed to sum to 1.0
+            'probabilities': [0.13, 0.17, 0.16, 0.15, 0.16, 0.13, 0.10]  # Realistic proportions that sum to 1.0
         }
         
         self.ethnicity_distribution = {
@@ -75,29 +75,29 @@ class EnhancedDemographicGenerator:
         return np.random.randint(min_age, max_age + 1)
     
     def _sample_education_by_age(self, age_group: str) -> str:
-        """Sample education level based on age cohort effects"""
-        # Older cohorts have lower educational attainment historically
+        """Sample education level based on age cohort effects - CORRECTED FOR US CENSUS 2023"""
+        # FIXED: Adjusted to achieve 33% Bachelor+ overall (was severely underrepresented)
         education_by_age = {
-            '18-24': [0.08, 0.35, 0.45, 0.12],  # Many still in school
-            '25-34': [0.07, 0.22, 0.32, 0.39],  # Higher college completion
-            '35-44': [0.08, 0.24, 0.31, 0.37],
-            '45-54': [0.10, 0.28, 0.29, 0.33],
-            '55-64': [0.12, 0.32, 0.28, 0.28],  # Lower college rates
-            '65-74': [0.15, 0.38, 0.25, 0.22],
-            '75+': [0.18, 0.42, 0.23, 0.17]     # Lowest college rates
+            '18-24': [0.08, 0.30, 0.45, 0.17],  # Increased Bachelor+ from 0.12 to 0.17
+            '25-34': [0.07, 0.20, 0.30, 0.43],  # Increased Bachelor+ from 0.39 to 0.43
+            '35-44': [0.08, 0.22, 0.28, 0.42],  # Increased Bachelor+ from 0.37 to 0.42
+            '45-54': [0.10, 0.26, 0.27, 0.37],  # Increased Bachelor+ from 0.33 to 0.37
+            '55-64': [0.12, 0.30, 0.26, 0.32],  # Increased Bachelor+ from 0.28 to 0.32
+            '65-74': [0.15, 0.36, 0.24, 0.25],  # Increased Bachelor+ from 0.22 to 0.25
+            '75+': [0.18, 0.40, 0.22, 0.20]     # Increased Bachelor+ from 0.17 to 0.20
         }
         
         probs = education_by_age[age_group]
         return np.random.choice(self.education_levels, p=probs)
     
     def _sample_income_by_education_age(self, education: str, age_group: str) -> str:
-        """Sample income based on education and age with realistic correlations"""
-        # Base income probabilities by education
+        """Sample income based on education and age with realistic correlations - CORRECTED"""
+        # FIXED: Base income probabilities by education to achieve 37% over $75k
         income_by_education = {
-            'Less than HS': [0.45, 0.25, 0.20, 0.08, 0.02, 0.00],
-            'High School': [0.25, 0.30, 0.25, 0.15, 0.05, 0.00],
-            'Some College': [0.15, 0.25, 0.30, 0.20, 0.08, 0.02],
-            'Bachelor+': [0.05, 0.10, 0.20, 0.25, 0.25, 0.15]
+            'Less than HS': [0.50, 0.28, 0.18, 0.04, 0.00, 0.00],  # Lower income
+            'High School': [0.28, 0.32, 0.25, 0.12, 0.03, 0.00],   # Working class
+            'Some College': [0.18, 0.28, 0.32, 0.18, 0.04, 0.00],  # Middle class
+            'Bachelor+': [0.05, 0.15, 0.25, 0.30, 0.20, 0.05]      # Higher income - CORRECTED
         }
         
         # Age adjustments (peak earning years 35-54)

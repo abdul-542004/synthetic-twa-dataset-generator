@@ -100,34 +100,34 @@ class WellnessAgingOutcomeGenerator:
         }
     
     def _calculate_biological_age_base(self, chronological_age: int, demographics: Dict) -> float:
-        """Calculate baseline biological age with demographic adjustments"""
+        """Calculate baseline biological age with demographic adjustments - CORRECTED MEANS"""
         
-        # Start with chronological age
-        bio_age = float(chronological_age)
+        # CRITICAL FIX: Start closer to chronological age to achieve ~0.0 mean acceleration
+        bio_age = float(chronological_age) - 0.5  # Reduced baseline to offset positive effects
         
         # Gender effects (women age more slowly on average)
         if demographics['gender'] == 'Female':
-            bio_age -= 0.5
+            bio_age -= 0.3  # Reduced from 0.5
         elif demographics['gender'] == 'Male':
-            bio_age += 0.3
+            bio_age += 0.2  # Reduced from 0.3
         
-        # Ethnicity effects (based on health disparities research)
+        # Ethnicity effects (based on health disparities research) - REDUCED
         ethnicity_effects = {
-            'White': 0.0, 'Asian': -0.8, 'Hispanic': -0.3, 
-            'Black': +1.2, 'Other': +0.1
+            'White': 0.0, 'Asian': -0.4, 'Hispanic': -0.2,  # Reduced effects
+            'Black': +0.6, 'Other': +0.1   # Reduced from +1.2 to +0.6
         }
         bio_age += ethnicity_effects.get(demographics['ethnicity'], 0.0)
         
-        # Socioeconomic effects
+        # Socioeconomic effects - REDUCED
         education_effects = {
-            'Less than HS': +2.0, 'High School': +0.5, 
-            'Some College': -0.2, 'Bachelor+': -1.5
+            'Less than HS': +1.0, 'High School': +0.3,  # Reduced from +2.0, +0.5
+            'Some College': -0.1, 'Bachelor+': -0.8     # Reduced from -0.2, -1.5
         }
         bio_age += education_effects.get(demographics['education'], 0.0)
         
         income_effects = {
-            '<$35k': +1.5, '$35-50k': +0.8, '$50-75k': +0.2,
-            '$75-100k': -0.3, '$100-150k': -0.8, '>$150k': -1.2
+            '<$35k': +0.8, '$35-50k': +0.4, '$50-75k': +0.1,  # Reduced effects
+            '$75-100k': -0.2, '$100-150k': -0.4, '>$150k': -0.6  # Reduced effects
         }
         bio_age += income_effects.get(demographics['income_bracket'], 0.0)
         
@@ -140,35 +140,42 @@ class WellnessAgingOutcomeGenerator:
         effects = self.research_effects['biological_age_effects']
         annual_age_modification = 0.0
         
-        # Apply protective effects (Do More behaviors) - FIXED THRESHOLDS FOR REALISTIC PREVALENCE
-        if twa_behaviors['motion_days_week'] >= 5:  # Increased from 3 to match 28% prevalence target
+    def _calculate_biological_age_from_behaviors(self, base_bio_age: float, 
+                                               twa_behaviors: Dict, months_elapsed: int) -> float:
+        """Calculate biological age modification from TWA behaviors - CRITICAL FIXES"""
+        
+        effects = self.research_effects['biological_age_effects']
+        annual_age_modification = 0.0
+        
+        # Apply protective effects (Do More behaviors) - CORRECTED THRESHOLDS
+        if twa_behaviors['motion_days_week'] >= 3:  # Back to 3+ to match 28% prevalence
             annual_age_modification += effects['motion_high']
             
-        if twa_behaviors['diet_mediterranean_score'] >= 7:  # Increased from 6 to match 22% prevalence target
+        if twa_behaviors['diet_mediterranean_score'] >= 7:  # Keep at 7 for 22% prevalence
             annual_age_modification += effects['diet_mediterranean']
             
-        if twa_behaviors['meditation_minutes_week'] >= 150:  # Increased from 60 to match 15% prevalence target
+        if twa_behaviors['meditation_minutes_week'] >= 150:  # Keep at 150 for 15% prevalence
             annual_age_modification += effects['meditation_regular']
             
         if twa_behaviors['sleep_hours'] >= 7 and twa_behaviors['sleep_quality_score'] >= 6:
             sleep_bonus_hours = max(0, twa_behaviors['sleep_quality_score'] - 6)
             annual_age_modification += effects['sleep_quality'] * sleep_bonus_hours
             
-        if twa_behaviors['purpose_meaning_score'] >= 8:  # Increased from 6 to match realistic prevalence
+        if twa_behaviors['purpose_meaning_score'] >= 8:  # Keep at 8 for 40% prevalence
             annual_age_modification += effects['purpose_high']
             
-        if twa_behaviors['social_connections_count'] >= 4:  # Increased from 3 to match realistic prevalence
+        if twa_behaviors['social_connections_count'] >= 4:  # Keep at 4 for 35% prevalence
             annual_age_modification += effects['social_connected']
             
         if twa_behaviors['nature_minutes_week'] >= 120:  # 2+ hours/week
             annual_age_modification += effects['nature_connection']
             
-        if twa_behaviors['cultural_hours_week'] >= 5:  # Increased from 3
+        if twa_behaviors['cultural_hours_week'] >= 5:
             annual_age_modification += effects['cultural_engagement']
         
-        # Apply risk effects (Do Less behaviors) - FIXED SIGNS
+        # Apply risk effects (Do Less behaviors) - ENSURE PROPER SIGNS
         if twa_behaviors['smoking_status'] == 'Current':
-            annual_age_modification += effects['smoking_current']  # Positive = aging acceleration
+            annual_age_modification += effects['smoking_current']  # +5.3 years = aging acceleration
             
         if twa_behaviors['alcohol_drinks_week'] > 14:
             annual_age_modification += effects['alcohol_excess']
@@ -192,22 +199,12 @@ class WellnessAgingOutcomeGenerator:
         if (twa_behaviors['sleep_hours'] < 6 or twa_behaviors['sleep_quality_score'] < 5):
             annual_age_modification += effects['sleep_poor']
         
-        # FIXED: Convert annual effect to monthly and apply diminishing returns
-        # Use logarithmic scaling to prevent extreme effects
-        if annual_age_modification != 0:
-            # Apply diminishing returns for multiple interventions
-            sign = 1 if annual_age_modification > 0 else -1
-            abs_effect = abs(annual_age_modification)
-            # Stronger diminishing returns: each additional intervention has much less impact
-            adjusted_effect = sign * (abs_effect ** 0.5)  # Square root for stronger diminishing returns
-            
-            monthly_effect = adjusted_effect / 12  # Convert annual to monthly
-            cumulative_effect = monthly_effect * months_elapsed
-        else:
-            cumulative_effect = 0
+        # CRITICAL FIX: Remove excessive diminishing returns that were killing effect sizes
+        monthly_effect = annual_age_modification / 12  # Direct conversion without diminishing returns
+        cumulative_effect = monthly_effect * months_elapsed
         
-        # Natural aging progression (reduced to account for intervention effects)
-        natural_aging = months_elapsed / 12 * 0.8  # Slightly less than 1 year per year
+        # Natural aging progression
+        natural_aging = months_elapsed / 12
         
         biological_age = base_bio_age + natural_aging + cumulative_effect
         
@@ -215,57 +212,57 @@ class WellnessAgingOutcomeGenerator:
     
     def _calculate_mortality_risk_score(self, demographics: Dict, twa_behaviors: Dict, 
                                       biological_age: float) -> float:
-        """Calculate mortality risk score based on behaviors and bioage"""
+        """Calculate mortality risk score based on behaviors and bioage - CRITICAL CORRELATION FIX"""
         
-        # Start with baseline risk (age-adjusted)
+        # Start with baseline risk (age-adjusted) - REDUCED base to allow behavior effects
         chronological_age = demographics['age_numeric']
-        base_risk = 0.01 * math.exp((chronological_age - 50) / 25)  # Exponential age effect
+        base_risk = 0.005 * math.exp((chronological_age - 50) / 30)  # Reduced base and gentler age curve
         
         # Apply behavior-based hazard ratio modifications
         hr_effects = self.research_effects['mortality_risk_effects']
         risk_multiplier = 1.0
         
-        # Protective factors
+        # CRITICAL: Protective factors - STRONGER EFFECTS for correlation
         if twa_behaviors['purpose_meaning_score'] >= 8:
-            risk_multiplier *= hr_effects['purpose_high']
+            risk_multiplier *= hr_effects['purpose_high']  # 0.57 = 43% reduction
             
         if twa_behaviors['social_connections_count'] >= 4:
-            risk_multiplier *= hr_effects['social_connected']
+            risk_multiplier *= hr_effects['social_connected']  # 0.50 = 50% reduction
             
         if twa_behaviors['motion_days_week'] >= 3:
-            risk_multiplier *= hr_effects['exercise_regular']
+            risk_multiplier *= hr_effects['exercise_regular']  # 0.72 = 28% reduction
             
         if twa_behaviors['diet_mediterranean_score'] >= 7:
-            risk_multiplier *= hr_effects['diet_quality_high']
+            risk_multiplier *= hr_effects['diet_quality_high']  # 0.70 = 30% reduction
             
         if twa_behaviors['meditation_minutes_week'] >= 150:
-            risk_multiplier *= hr_effects['meditation_practice']
+            risk_multiplier *= hr_effects['meditation_practice']  # 0.82 = 18% reduction
             
         if (twa_behaviors['sleep_hours'] >= 7 and twa_behaviors['sleep_quality_score'] >= 6):
-            risk_multiplier *= hr_effects['sleep_quality_good']
+            risk_multiplier *= hr_effects['sleep_quality_good']  # 0.85 = 15% reduction
             
         if twa_behaviors['nature_minutes_week'] >= 120:
-            risk_multiplier *= hr_effects['nature_connection']
+            risk_multiplier *= hr_effects['nature_connection']  # 0.88 = 12% reduction
         
-        # Risk factors
+        # Risk factors - STRONGER EFFECTS
         if twa_behaviors['social_connections_count'] < 2:
-            risk_multiplier *= hr_effects['social_isolated']
+            risk_multiplier *= hr_effects['social_isolated']  # 1.91 = 91% increase
             
         if twa_behaviors['smoking_status'] == 'Current':
-            risk_multiplier *= hr_effects['smoking_current']
+            risk_multiplier *= hr_effects['smoking_current']  # 2.24 = 124% increase
             
         if twa_behaviors['alcohol_drinks_week'] > 14:
-            risk_multiplier *= hr_effects['alcohol_excess']
+            risk_multiplier *= hr_effects['alcohol_excess']  # 1.31 = 31% increase
         
-        # Biological age acceleration effect
+        # Biological age acceleration effect - ENHANCED
         age_acceleration = biological_age - chronological_age
         if age_acceleration > 0:
-            risk_multiplier *= (1 + age_acceleration * 0.08)  # 8% increase per year of acceleration
+            risk_multiplier *= (1 + age_acceleration * 0.15)  # Increased from 0.08 to 0.15
         else:
-            risk_multiplier *= (1 + age_acceleration * 0.05)  # 5% decrease per year younger bio age
+            risk_multiplier *= (1 + age_acceleration * 0.10)  # Increased from 0.05 to 0.10
         
         final_risk = base_risk * risk_multiplier
-        return min(1.0, max(0.001, final_risk))  # Bounded between 0.1% and 100%
+        return min(0.2, max(0.001, final_risk))  # Bounded between 0.1% and 20%
     
     def _calculate_estimated_lifespan(self, demographics: Dict, mortality_risk: float) -> float:
         """Calculate estimated lifespan based on demographics and risk factors"""
@@ -381,31 +378,31 @@ class WellnessAgingOutcomeGenerator:
     
     def _generate_functional_measures(self, demographics: Dict, twa_behaviors: Dict, 
                                     biological_age: float) -> Dict:
-        """Generate functional measures (grip strength, gait speed, etc.)"""
+        """Generate functional measures (grip strength, gait speed, etc.) - CORRECTED MEANS"""
         
         measures = {}
         current_age = demographics['age_numeric']
         
-        # Grip strength
-        grip_base = self.biomarker_ranges['grip_strength']['mean']
+        # Grip strength - CORRECTED BASE
+        grip_base = self.biomarker_ranges['grip_strength']['mean'] * 1.1  # Increased base
         
-        # Gender effect
+        # Gender effect - REDUCED
         if demographics['gender'] == 'Male':
-            grip_base *= 1.3
+            grip_base *= 1.25  # Reduced from 1.3
         elif demographics['gender'] == 'Female':
-            grip_base *= 0.7
+            grip_base *= 0.75  # Increased from 0.7
         
-        # Age decline (about 1% per year after 40)
+        # Age decline (about 1% per year after 40) - REDUCED
         if current_age > 40:
-            age_decline = (current_age - 40) * 0.01
+            age_decline = (current_age - 40) * 0.008  # Reduced from 0.01
             grip_base *= (1 - age_decline)
         
         # Exercise benefit
         if twa_behaviors['motion_days_week'] >= 3:
             grip_base *= 1.15
         
-        # Biological age effect
-        bio_age_effect = (biological_age - current_age) * 0.02
+        # Biological age effect - REDUCED
+        bio_age_effect = (biological_age - current_age) * 0.015  # Reduced from 0.02
         grip_base *= (1 - bio_age_effect)
         
         grip_value = max(10, grip_base + np.random.normal(0, 4))
@@ -516,26 +513,26 @@ class WellnessAgingOutcomeGenerator:
         return measures
     
     def _generate_psychosocial_outcomes(self, twa_behaviors: Dict, biomarkers: Dict) -> Dict:
-        """Generate psychosocial wellbeing outcomes"""
+        """Generate psychosocial wellbeing outcomes - CORRECTED MEANS"""
         
         outcomes = {}
         
-        # Life satisfaction (strongly correlated with purpose and social connections)
-        life_sat_base = 6.5  # Average life satisfaction
+        # Life satisfaction (strongly correlated with purpose and social connections) - FIXED MEAN
+        life_sat_base = 5.8  # Reduced from 6.5 to achieve target mean of 6.5
         
-        # Strong predictors
-        life_sat_base += (twa_behaviors['purpose_meaning_score'] - 6) * 0.4
-        life_sat_base += (twa_behaviors['social_connections_count'] - 3) * 0.3
+        # Strong predictors - REDUCED EFFECTS
+        life_sat_base += (twa_behaviors['purpose_meaning_score'] - 6) * 0.25  # Reduced from 0.4
+        life_sat_base += (twa_behaviors['social_connections_count'] - 3) * 0.2   # Reduced from 0.3
         
-        # Health-related predictors
-        life_sat_base += (twa_behaviors['sleep_quality_score'] - 6) * 0.2
-        life_sat_base += min(0, (twa_behaviors['motion_days_week'] - 2) * 0.2)
+        # Health-related predictors - REDUCED EFFECTS  
+        life_sat_base += (twa_behaviors['sleep_quality_score'] - 6) * 0.15  # Reduced from 0.2
+        life_sat_base += min(0, (twa_behaviors['motion_days_week'] - 2) * 0.15)  # Reduced from 0.2
         
-        # Nature and cultural engagement
+        # Nature and cultural engagement - REDUCED EFFECTS
         if twa_behaviors['nature_minutes_week'] >= 120:
-            life_sat_base += 0.5
+            life_sat_base += 0.3  # Reduced from 0.5
         if twa_behaviors['cultural_hours_week'] >= 5:
-            life_sat_base += 0.4
+            life_sat_base += 0.25  # Reduced from 0.4
         
         life_sat_value = life_sat_base + np.random.normal(0, 0.8)
         outcomes['life_satisfaction'] = np.clip(life_sat_value, 1, 10)
