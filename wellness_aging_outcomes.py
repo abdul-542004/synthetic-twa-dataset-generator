@@ -132,14 +132,7 @@ class WellnessAgingOutcomeGenerator:
         bio_age += income_effects.get(demographics['income_bracket'], 0.0)
         
         return bio_age
-    
-    def _calculate_biological_age_from_behaviors(self, base_bio_age: float, 
-                                               twa_behaviors: Dict, months_elapsed: int) -> float:
-        """Calculate biological age modification from TWA behaviors"""
-        
-        effects = self.research_effects['biological_age_effects']
-        annual_age_modification = 0.0
-        
+
     def _calculate_biological_age_from_behaviors(self, base_bio_age: float, 
                                                twa_behaviors: Dict, months_elapsed: int) -> float:
         """Calculate biological age modification from TWA behaviors - CRITICAL FIXES"""
