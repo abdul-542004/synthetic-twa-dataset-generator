@@ -61,41 +61,27 @@ dataset-generator/
 ├── validation_framework.py        # Research benchmark validation
 ├── generate_twa_dataset.py        # Main generation script
 ├── instructions.md                # Original research plan
-├── generated_datasets/            # Output directory
-│   ├── enhanced_twa_dataset.csv   # Complete dataset
-│   ├── enhanced_twa_dataset.xlsx  # Excel with summaries
-│   ├── dataset_documentation.md   # Comprehensive guide
-│   ├── data_dictionary.csv        # Variable definitions
-│   └── validation_report.json     # Technical validation
-└── digital_twin_framework/        # Interactive Digital Twin Application
-    ├── core/                      # Core framework components
-    │   ├── digital_twin_framework.py  # Personal digital twins
-    │   ├── intervention_planner.py    # Evidence-based planning
-    │   └── progress_monitor.py        # Real-time monitoring
-    ├── streamlit_app.py           # Interactive web application
-    ├── run_app.py                 # App launcher script
-    ├── requirements.txt           # App dependencies
-    ├── README.md                  # Framework documentation
-    ├── docs/                      # Technical documentation
-    ├── examples/                  # Usage examples
-    └── tests/                     # Test suite
+└── generated_datasets/            # Output directory
+    ├── enhanced_twa_dataset.csv   # Complete dataset
+    ├── enhanced_twa_dataset.xlsx  # Excel with summaries
+    ├── dataset_documentation.md   # Comprehensive guide
+    ├── data_dictionary.csv        # Variable definitions
+    └── validation_report.json     # Technical validation
 ```
 
 ## 🚀 Quick Start
 
-### Option 1: Generate Synthetic Dataset Only
-
-#### 1. Generate Dataset
+### 1. Generate Dataset
 ```bash
 python generate_twa_dataset.py
 ```
 
-#### 2. Access Results
+### 2. Access Results
 - **Main Dataset**: `generated_datasets/enhanced_twa_dataset.csv`
 - **Documentation**: `generated_datasets/dataset_documentation.md`
 - **Data Dictionary**: `generated_datasets/data_dictionary.csv`
 
-#### 3. Customize Parameters
+### 3. Customize Parameters
 Edit configuration in `generate_twa_dataset.py`:
 ```python
 config = {
@@ -105,34 +91,6 @@ config = {
     'validate_dataset': True
 }
 ```
-
-### Option 2: Interactive Digital Twin Application
-
-Experience the dataset in action with a complete personalized wellness optimization platform:
-
-#### 1. Install App Dependencies
-```bash
-cd digital_twin_framework
-pip install -r requirements.txt
-```
-
-#### 2. Launch Interactive App
-```bash
-python run_app.py
-```
-Or directly:
-```bash
-streamlit run streamlit_app.py
-```
-
-#### 3. Explore Features
-- **🏠 Home**: Try the demo with sample personas
-- **👤 Create Digital Twin**: Input your real data
-- **🎯 Optimize Wellness**: Get AI-powered recommendations
-- **📊 Progress Tracking**: View detailed weekly action plans
-- **📈 Analytics Dashboard**: Monitor trends and adaptations
-
-The app will open in your browser at `http://localhost:8501`
 
 ## 📈 Validation Results
 
@@ -208,37 +166,6 @@ This dataset enables immediate research applications in:
 - **Public Health**: Population-level wellness strategies
 - **AI/ML**: Predictive health modeling and personalization
 
-## 🖥️ Digital Twin Framework
-
-The included **Digital Twin Framework** transforms this synthetic dataset into a production-ready personalized wellness platform:
-
-### Core Components
-- **PersonalDigitalTwin**: Creates individual wellness models with outcome predictions
-- **InterventionPlanner**: Converts recommendations into actionable 12-week programs
-- **ProgressMonitor**: Real-time adaptation based on user progress and barriers
-- **Interactive App**: Complete Streamlit-based user interface
-
-### Key Features
-- **🎯 AI-Powered Optimization**: Personalized recommendations based on demographics and current behaviors
-- **📋 Structured Programs**: Evidence-based intervention plans with weekly progression
-- **🔄 Adaptive Monitoring**: Plans automatically adjust to real-world barriers and compliance
-- **📊 Progress Visualization**: Interactive charts and analytics for user engagement
-- **👥 Population Insights**: Learn what works across different demographic groups
-
-### Use Cases
-- **Research Platform**: Study intervention effectiveness and behavior change patterns
-- **Clinical Integration**: Support healthcare providers with evidence-based wellness planning
-- **Consumer Applications**: Power wellness apps with personalized, scientifically-grounded recommendations
-- **Corporate Wellness**: Optimize employee health programs with predictive analytics
-
-### Technical Specifications
-- **Built on**: Python, Streamlit, Pandas, Matplotlib
-- **Data Source**: Uses the generated TWA dataset for realistic modeling
-- **Architecture**: Modular design for easy integration and customization
-- **Validation**: Includes comprehensive test suite and benchmarking
-
-See `digital_twin_framework/README.md` for detailed technical documentation and API usage.
-
 ## 📝 Citation
 
 When using this dataset, please cite:
@@ -253,11 +180,10 @@ When using this dataset, please cite:
 - **Global Populations**: Extend beyond US demographics
 - **Intervention Modeling**: Add specific program effects
 
-## ✅ Project Status: COMPLETE - Enhanced v2.0 + Interactive Framework
+## ✅ Project Status: COMPLETE - Enhanced v2.0
 
 All objectives from the original research plan have been successfully implemented with major client-requested improvements:
 
-### Dataset Generation (v2.0)
 ✅ **Enhanced Demographics Generator** - US Census + NHANES correlations  
 ✅ **TWA Behavior Modeling** - Blue Zone + intervention evidence with persona consistency  
 ✅ **Outcome Generation** - Expert consensus biomarkers with demographic alignment  
@@ -265,14 +191,6 @@ All objectives from the original research plan have been successfully implemente
 ✅ **Validation Framework** - Research benchmarking  
 ✅ **Complete Dataset** - 1,000 subjects × 12 months with improved consistency  
 ✅ **Enhanced Documentation** - Comprehensive research-grade materials + client improvements
-
-### Digital Twin Framework (New Addition)
-✅ **Interactive Web Application** - Complete Streamlit-based user interface  
-✅ **AI-Powered Optimization** - Personalized wellness recommendations  
-✅ **Intervention Planning** - Evidence-based 12-week program generation  
-✅ **Real-Time Monitoring** - Adaptive progress tracking and plan modification  
-✅ **Analytics Dashboard** - Comprehensive progress visualization and insights  
-✅ **Production Ready** - Modular architecture for deployment and integration
 
 ### 🎯 Version 2.0 Client Improvements
 
@@ -294,13 +212,12 @@ All objectives from the original research plan have been successfully implemente
 - Smoking → Biomarkers: Proper inflammatory response (+100% CRP)
 - Diet Quality → Cognitive function: Mediterranean diet benefits (+1.2 points per score)
 
-**Total Implementation Time**: ~12 hours (dataset generation + digital twin framework)  
+**Total Implementation Time**: ~8 hours (including v2.0 enhancements)  
 **Dataset Quality**: Research-grade with enhanced persona consistency  
 **Scientific Rigor**: Benchmarked against peer-reviewed studies  
-**Application Readiness**: Complete interactive platform for immediate deployment  
 **Client Satisfaction**: All requested improvements implemented ✅  
 
-The complete system is ready for immediate use in TWA research, model development, wellness intervention studies, and production deployment.
+The dataset is ready for immediate use in TWA research, model development, and wellness intervention studies.
 
 ---
 

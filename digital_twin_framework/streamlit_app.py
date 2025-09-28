@@ -15,12 +15,30 @@ import sys
 import os
 from typing import Dict, List
 
-# Add parent directory to path for imports
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+# Fix imports for Streamlit Cloud deployment
+current_dir = os.path.dirname(os.path.abspath(__file__))
+core_dir = os.path.join(current_dir, 'core')
+parent_dir = os.path.dirname(current_dir)
 
-from digital_twin_framework.core.digital_twin_framework import PersonalDigitalTwin, DigitalTwinOrchestrator
-from digital_twin_framework.core.intervention_planner import InterventionPlanner
-from digital_twin_framework.core.progress_monitor import ProgressMonitor
+# Add paths to sys.path
+for path in [current_dir, core_dir, parent_dir]:
+    if path not in sys.path:
+        sys.path.insert(0, path)
+
+# Import with fallback strategies for deployment
+try:
+    from core.digital_twin_framework import PersonalDigitalTwin, DigitalTwinOrchestrator
+    from core.intervention_planner import InterventionPlanner
+    from core.progress_monitor import ProgressMonitor
+except ImportError:
+    try:
+        from digital_twin_framework.core.digital_twin_framework import PersonalDigitalTwin, DigitalTwinOrchestrator
+        from digital_twin_framework.core.intervention_planner import InterventionPlanner
+        from digital_twin_framework.core.progress_monitor import ProgressMonitor
+    except ImportError as e:
+        st.error(f"Failed to import required modules: {e}")
+        st.error("Please check that all core modules are present in the digital_twin_framework/core/ directory")
+        st.stop()
 
 # Set page configuration
 st.set_page_config(
