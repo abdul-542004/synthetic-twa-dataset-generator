@@ -210,12 +210,20 @@ def main():
         st.session_state.weekly_checklists = {}
     if 'progress_monitor' not in st.session_state:
         st.session_state.progress_monitor = None
+    if 'user_name' not in st.session_state:
+        st.session_state.user_name = None
+    if 'onboarding_complete' not in st.session_state:
+        st.session_state.onboarding_complete = False
 
 
 
     # Enhanced sidebar with guided navigation
     with st.sidebar:
-        st.header("🧭 Your Wellness Journey")
+        # Personalized greeting
+        if st.session_state.user_name:
+            st.markdown(f"### 👋 Welcome back, {st.session_state.user_name}!")
+        else:
+            st.header("🧭 Your Wellness Journey")
         
         # Progress indicator
         twin_created = st.session_state.digital_twin is not None
@@ -224,7 +232,25 @@ def main():
         
         st.markdown("### 📍 Journey Progress")
         
-        # Step indicators
+        # Calculate overall progress percentage
+        completed_steps = sum([
+            1,  # Home is always accessible
+            1 if twin_created else 0,
+            1 if optimization_done else 0,
+            1 if progress_tracked else 0,
+            1 if progress_tracked else 0  # Analytics
+        ])
+        progress_pct = (completed_steps / 5) * 100
+        
+        # Visual progress bar
+        st.markdown(f"""
+        <div style="background: #e0e0e0; border-radius: 1rem; height: 1rem; overflow: hidden; margin: 1rem 0;">
+            <div style="background: linear-gradient(90deg, #4caf50, #81c784); height: 100%; width: {progress_pct}%; transition: width 0.3s ease;"></div>
+        </div>
+        <p style="text-align: center; margin-top: 0.5rem; font-size: 0.9rem; color: #666;">{progress_pct:.0f}% Complete</p>
+        """, unsafe_allow_html=True)
+        
+        # Step indicators with better visuals
         steps = [
             ("🏠 Learn About Digital Twins", True, "home"),
             ("👤 Create Your Digital Twin", twin_created, "create"),
@@ -236,11 +262,12 @@ def main():
         for i, (step_name, completed, step_id) in enumerate(steps, 1):
             status_icon = "✅" if completed else "⏳"
             color = "#4caf50" if completed else "#e0e0e0"
+            opacity = "1.0" if completed else "0.6"
             
             st.markdown(f"""
             <div style="display: flex; align-items: center; margin: 0.5rem 0; padding: 0.5rem; 
                         background: {'#e8f5e8' if completed else '#f5f5f5'}; 
-                        border-radius: 0.5rem; border-left: 4px solid {color};">
+                        border-radius: 0.5rem; border-left: 4px solid {color}; opacity: {opacity};">
                 <span style="margin-right: 0.5rem; font-size: 1.2rem;">{status_icon}</span>
                 <span style="font-size: 0.9rem;">{step_name}</span>
             </div>
@@ -256,15 +283,45 @@ def main():
 
         st.markdown("---")
         
-        # Quick stats if twin exists
+        # Enhanced quick stats if twin exists
         if twin_created:
-            st.markdown("### � Quick Stats")
+            st.markdown("### 📊 Quick Stats")
             wellness_score = st.session_state.digital_twin._calculate_wellness_score()
-            st.metric("Current Wellness Score", f"{wellness_score:.0f}/100")
+            
+            # Color-coded wellness score
+            if wellness_score >= 75:
+                score_color = "#4caf50"
+                score_emoji = "🌟"
+                score_status = "Excellent"
+            elif wellness_score >= 60:
+                score_color = "#2196f3"
+                score_emoji = "✨"
+                score_status = "Good"
+            elif wellness_score >= 45:
+                score_color = "#ff9800"
+                score_emoji = "⚠️"
+                score_status = "Fair"
+            else:
+                score_color = "#f44336"
+                score_emoji = "🔴"
+                score_status = "Needs Attention"
+            
+            st.markdown(f"""
+            <div style="background: {score_color}20; padding: 1rem; border-radius: 0.5rem; border-left: 4px solid {score_color}; text-align: center;">
+                <div style="font-size: 2rem;">{score_emoji}</div>
+                <div style="font-size: 1.5rem; font-weight: bold; color: {score_color};">{wellness_score:.0f}/100</div>
+                <div style="font-size: 0.8rem; color: #666;">{score_status}</div>
+            </div>
+            """, unsafe_allow_html=True)
             
             if optimization_done:
                 success_prob = st.session_state.optimization_results.get('estimated_success_probability', 0)
-                st.metric("Success Probability", f"{success_prob:.0%}")
+                st.metric("Success Probability", f"{success_prob:.0%}", help="Likelihood of achieving your wellness goals")
+                
+                # Show time since optimization
+                if 'optimization_date' in st.session_state:
+                    days_since = (datetime.now() - st.session_state.optimization_date).days
+                    st.caption(f"Plan created {days_since} days ago")
         
         st.markdown("---")
         st.markdown("### 💡 About This Tool")
@@ -441,7 +498,7 @@ def show_home_page():
         Checks how it’s going, **nudges you when you slip**, and adjusts the plan when life happens.
         """)
 
-    if st.button("🚀 Run Interactive Demo", type="primary", use_container_width=True):
+    if st.button("🚀 Run Interactive Demo", type="primary", width="stretch"):
         run_enhanced_demo()
 
 def run_enhanced_demo():
@@ -769,7 +826,7 @@ def create_current_vs_optimized_chart(current_behaviors, recommendations):
                        f'{height:.1f}', ha='center', va='bottom', fontsize=9)
         
         plt.tight_layout()
-        st.pyplot(fig, use_container_width=True)
+        st.pyplot(fig, width="stretch")
         
         # Interpretation
         st.markdown("""
@@ -784,7 +841,29 @@ def show_create_twin_page():
     """Page for creating a digital twin"""
 
     st.markdown('<div class="section-header">👤 Create Your Digital Twin</div>', unsafe_allow_html=True)
-    st.markdown("Input your personal information to create your wellness digital twin")
+    
+    # First-time user onboarding
+    if not st.session_state.onboarding_complete:
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 2rem; border-radius: 1rem; color: white; margin-bottom: 2rem;">
+            <h3 style="color: white; margin-bottom: 1rem;">👋 Welcome! Let's Create Your Digital Twin</h3>
+            <p style="font-size: 1.1rem; margin-bottom: 0.5rem;">
+                Your Digital Twin is a personalized AI model that understands your unique health profile.
+            </p>
+            <p style="font-size: 0.95rem; opacity: 0.9;">
+                We'll ask about your demographics and current lifestyle habits. This takes about 3-5 minutes.
+                All data stays in your browser session - nothing is stored externally.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Optional: Ask for name
+        user_name = st.text_input("👤 What should we call you? (Optional)", placeholder="Enter your first name")
+        if user_name:
+            st.session_state.user_name = user_name
+    
+    st.markdown("### 📋 Tell us about yourself")
+    st.markdown("*Fill in the information below to create your personalized digital twin. Be honest - this helps us give you the best recommendations!*")
 
     with st.form("twin_creation_form"):
         col1, col2 = st.columns(2)
@@ -792,34 +871,88 @@ def show_create_twin_page():
         with col1:
             st.markdown("### 👤 Demographics")
 
-            age = st.slider("Age", 18, 90, 35)
+            age = st.slider("Age", 18, 90, 35, help="Your current age")
             gender = st.selectbox("Gender", ["Female", "Male", "Other"])
             ethnicity = st.selectbox("Ethnicity", ["White", "Black", "Hispanic", "Asian", "Other"])
             education = st.selectbox("Education", ["Less than HS", "High School", "Some College", "Bachelor+", "Graduate"])
             income = st.selectbox("Income Bracket", ["<$35k", "$35-50k", "$50-75k", "$75-100k", "$100-150k", ">$150k"])
             location = st.selectbox("Location Type", ["Urban", "Suburban", "Rural"])
-            fitness = st.selectbox("Current Fitness Level", ["Low", "Medium", "High"])
+            fitness = st.selectbox("Current Fitness Level", ["Low", "Medium", "High"], 
+                                  help="Low: Sedentary, Medium: Occasionally active, High: Regularly active")
 
         with col2:
-            st.markdown("### 🏃 Current Behaviors")
-
-            motion_days = st.slider("Exercise Days/Week", 0, 7, 3)
-            diet_score = st.slider("Mediterranean Diet Score (0-10)", 0.0, 10.0, 5.0)
-            meditation = st.slider("Meditation Minutes/Week", 0, 300, 0)
-            sleep_hours = st.slider("Sleep Hours/Night", 4, 12, 7)
-            sleep_quality = st.slider("Sleep Quality (1-10)", 1, 10, 6)
-            purpose = st.slider("Purpose/Meaning Score (1-10)", 1, 10, 6)
-            social = st.slider("Social Connections Count", 0, 20, 4)
-            nature = st.slider("Nature Time Minutes/Week", 0, 500, 60)
-            cultural = st.slider("Cultural Activities Hours/Week", 0, 20, 2)
-
+            st.markdown("### 🏃 Current Lifestyle Behaviors")
+            
+            st.markdown("**Physical Activity**")
+            motion_days = st.slider("Exercise Days per Week", 0, 7, 3, 
+                                   help="How many days per week do you do at least 30 minutes of exercise?")
+            
+            st.markdown("**Nutrition**")
+            diet_score = st.slider("Mediterranean Diet Score (0-10)", 0.0, 10.0, 5.0,
+                                  help="0=No Mediterranean foods, 10=Perfect Mediterranean diet (fish, vegetables, olive oil, whole grains)")
+            processed_food = st.slider("Processed Food Servings/Week", 0, 30, 8,
+                                      help="Packaged snacks, fast food, frozen meals, etc.")
+            sugar = st.slider("Added Sugar Grams/Day", 0, 200, 35,
+                            help="Typical American: 60-80g/day. Target: <25g/day")
+            sodium = st.slider("Sodium Grams/Day", 0.0, 10.0, 4.5,
+                             help="Typical American: 3.4-4.5g. Target: <2.3g")
+            
+            st.markdown("**Sleep & Recovery**")
+            sleep_hours = st.slider("Sleep Hours/Night", 4, 12, 7,
+                                   help="Average hours of sleep per night")
+            sleep_quality = st.slider("Sleep Quality (1-10)", 1, 10, 6,
+                                    help="How well-rested do you feel?")
+            
+            st.markdown("**Mental Wellness**")
+            meditation = st.slider("Meditation/Mindfulness Minutes/Week", 0, 300, 0,
+                                  help="Formal meditation, breathwork, yoga, etc.")
+            purpose = st.slider("Purpose/Meaning Score (1-10)", 1, 10, 6,
+                              help="How much purpose and meaning do you feel in life?")
+            
+            st.markdown("**Social & Lifestyle**")
+            social = st.slider("Social Connections Count", 0, 20, 4,
+                             help="Close relationships you regularly interact with")
+            nature = st.slider("Nature Time Minutes/Week", 0, 500, 60,
+                             help="Time spent in natural environments")
+            cultural = st.slider("Cultural Activities Hours/Week", 0, 20, 2,
+                               help="Arts, music, museums, community events, etc.")
+            
+            st.markdown("**Risk Factors**")
             smoking = st.selectbox("Smoking Status", ["Never", "Former", "Current"])
-            alcohol = st.slider("Alcohol Drinks/Week", 0, 30, 6)
-            processed_food = st.slider("Processed Food Servings/Week", 0, 30, 8)
-            sugar = st.slider("Added Sugar Grams/Day", 0, 200, 35)
-            sodium = st.slider("Sodium Grams/Day", 0.0, 10.0, 4.5)
+            alcohol = st.slider("Alcohol Drinks/Week", 0, 30, 6,
+                              help="Standard drinks (12oz beer, 5oz wine, 1.5oz spirits)")
 
-        submitted = st.form_submit_button("🧬 Create My Digital Twin", type="primary", use_container_width=True)
+        # Add helpful context
+        st.markdown("---")
+        st.markdown("### 💡 Why We Ask These Questions")
+        
+        info_col1, info_col2, info_col3 = st.columns(3)
+        
+        with info_col1:
+            st.markdown("""
+            **Demographics Help Us:**
+            - Account for age-related factors
+            - Consider cultural influences
+            - Adjust for lifestyle constraints
+            """)
+        
+        with info_col2:
+            st.markdown("""
+            **Behaviors Show Us:**
+            - Current health trajectory
+            - Improvement opportunities
+            - Risk factor exposure
+            """)
+        
+        with info_col3:
+            st.markdown("""
+            **This Enables:**
+            - Personalized recommendations
+            - Realistic goal setting
+            - Accurate outcome prediction
+            """)
+
+        submitted = st.form_submit_button("🧬 Create My Digital Twin", type="primary", width="stretch")
 
         if submitted:
             # Create demographics dict
@@ -852,7 +985,7 @@ def show_create_twin_page():
             }
 
             # Create digital twin
-            with st.spinner("Creating your personalized digital twin..."):
+            with st.spinner("🧬 Creating your personalized digital twin..."):
                 try:
                     orchestrator = DigitalTwinOrchestrator(random_seed=42)
                     twin = orchestrator.create_digital_twin(
@@ -868,23 +1001,122 @@ def show_create_twin_page():
                     st.session_state.weekly_checklists = {}
                     st.session_state.progress_monitor = None
                     st.session_state.progress_history = []
+                    st.session_state.onboarding_complete = True
+                    
                     st.success("✅ Your digital twin has been created successfully!")
 
-                    # Display initial wellness profile
+                    # Display initial wellness profile with enhanced visuals
                     wellness_score = twin._calculate_wellness_score()
+                    
+                    st.markdown("---")
+                    st.markdown("### 🎯 Your Initial Wellness Assessment")
 
                     col1, col2, col3 = st.columns(3)
+                    
                     with col1:
-                        st.metric("Wellness Score", f"{wellness_score:.1f}/100")
+                        # Wellness score with visual indicator
+                        if wellness_score >= 75:
+                            score_color = "#4caf50"
+                            score_emoji = "🌟"
+                            score_msg = "Excellent! You're doing great!"
+                        elif wellness_score >= 60:
+                            score_color = "#2196f3"
+                            score_emoji = "✨"
+                            score_msg = "Good foundation to build on"
+                        elif wellness_score >= 45:
+                            score_color = "#ff9800"
+                            score_emoji = "⚠️"
+                            score_msg = "Room for improvement"
+                        else:
+                            score_color = "#f44336"
+                            score_emoji = "🔴"
+                            score_msg = "Let's optimize your health"
+                        
+                        st.markdown(f"""
+                        <div style="background: {score_color}20; padding: 1.5rem; border-radius: 0.5rem; border-left: 4px solid {score_color}; text-align: center;">
+                            <div style="font-size: 3rem;">{score_emoji}</div>
+                            <div style="font-size: 2rem; font-weight: bold; color: {score_color};">{wellness_score:.0f}/100</div>
+                            <div style="font-size: 1rem; margin-top: 0.5rem;">Wellness Score</div>
+                            <div style="font-size: 0.9rem; color: #666; margin-top: 0.3rem;">{score_msg}</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    
                     with col2:
-                        st.metric("Biological Age Acceleration",
-                                f"{twin.current_outcomes.get('biological_age_acceleration', 0):.1f} years")
+                        bio_age = twin.current_outcomes.get('biological_age_acceleration', 0)
+                        bio_color = "#4caf50" if bio_age <= 0 else "#f44336" if bio_age >= 2 else "#ff9800"
+                        
+                        st.markdown(f"""
+                        <div style="background: {bio_color}20; padding: 1.5rem; border-radius: 0.5rem; border-left: 4px solid {bio_color}; text-align: center;">
+                            <div style="font-size: 2rem; font-weight: bold; color: {bio_color};">{bio_age:+.1f} years</div>
+                            <div style="font-size: 1rem; margin-top: 0.5rem;">Biological Age</div>
+                            <div style="font-size: 0.9rem; color: #666; margin-top: 0.3rem;">
+                                {"Younger than chronological age" if bio_age < 0 else "Older than chronological age" if bio_age > 0 else "Same as chronological age"}
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    
                     with col3:
-                        st.metric("Life Satisfaction",
-                                f"{twin.current_outcomes.get('life_satisfaction_score', 0):.1f}/10")
+                        life_sat = twin.current_outcomes.get('life_satisfaction_score', 0)
+                        sat_color = "#4caf50" if life_sat >= 7 else "#2196f3" if life_sat >= 5 else "#ff9800"
+                        
+                        st.markdown(f"""
+                        <div style="background: {sat_color}20; padding: 1.5rem; border-radius: 0.5rem; border-left: 4px solid {sat_color}; text-align: center;">
+                            <div style="font-size: 2rem; font-weight: bold; color: {sat_color};">{life_sat:.1f}/10</div>
+                            <div style="font-size: 1rem; margin-top: 0.5rem;">Life Satisfaction</div>
+                            <div style="font-size: 0.9rem; color: #666; margin-top: 0.3rem;">
+                                {"High satisfaction" if life_sat >= 7 else "Moderate satisfaction" if life_sat >= 5 else "Could be improved"}
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    
+                    # Quick insights about their profile
+                    st.markdown("---")
+                    st.markdown("### 🔍 Initial Insights")
+                    
+                    insights = []
+                    
+                    # Positive insights
+                    if behaviors['motion_days_week'] >= 4:
+                        insights.append(("✅", "Great job staying active! Regular exercise is protecting your health."))
+                    if behaviors['diet_mediterranean_score'] >= 7:
+                        insights.append(("✅", "Excellent diet quality! Your nutrition is a strong foundation."))
+                    if behaviors['sleep_hours'] >= 7 and behaviors['sleep_hours'] <= 9:
+                        insights.append(("✅", "Perfect sleep duration! This supports recovery and longevity."))
+                    if behaviors['meditation_minutes_week'] >= 60:
+                        insights.append(("✅", "Strong mindfulness practice! This buffers against stress."))
+                    
+                    # Areas for improvement
+                    if behaviors['motion_days_week'] < 3:
+                        insights.append(("⚠️", "Low exercise frequency detected. This is a key area for improvement."))
+                    if behaviors['alcohol_drinks_week'] > 14:
+                        insights.append(("⚠️", "High alcohol consumption. Reducing this could significantly improve health."))
+                    if behaviors['sleep_hours'] < 7:
+                        insights.append(("⚠️", "Insufficient sleep. Prioritizing rest could boost your wellness score."))
+                    if behaviors['processed_food_servings_week'] > 12:
+                        insights.append(("⚠️", "High processed food intake. Reducing this lowers inflammation."))
+                    
+                    if insights:
+                        for emoji, insight in insights[:5]:  # Show top 5 insights
+                            st.markdown(f"{emoji} {insight}")
+                    else:
+                        st.info("Your profile looks balanced! We'll still find opportunities to optimize.")
+                    
+                    # Next steps
+                    st.markdown("---")
+                    st.markdown("### 🚀 Next Steps")
+                    st.info("""
+                    **Your digital twin is ready!** Here's what to do next:
+                    
+                    1. **Go to 'Optimize Wellness'** → Set your health goals and get personalized recommendations
+                    2. **Review your action plan** → See what specific changes will have the biggest impact
+                    3. **Track your progress** → Log your journey and watch your wellness score improve
+                    
+                    Click the **'🎯 Optimize Wellness'** tab in the sidebar to continue!
+                    """)
 
                 except Exception as e:
                     st.error(f"❌ Error creating digital twin: {str(e)}")
+                    st.error("Please check your inputs and try again. If the problem persists, contact support.")
 
 def show_optimization_page():
     """Page for wellness optimization"""
@@ -893,53 +1125,172 @@ def show_optimization_page():
 
     if st.session_state.digital_twin is None:
         st.warning("⚠️ Please create your digital twin first in the 'Create Digital Twin' section.")
+        
+        # Show teaser of what they'll get
+        st.markdown("---")
+        st.markdown("### 🎯 What You'll Get After Optimization:")
+        
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.markdown("""
+            **📊 Personalized Analysis**
+            - Current health assessment
+            - Problem area identification
+            - Risk factor analysis
+            """)
+        with col2:
+            st.markdown("""
+            **🎯 Action Plan**
+            - Prioritized recommendations
+            - Impact predictions
+            - Feasibility ratings
+            """)
+        with col3:
+            st.markdown("""
+            **🗺️ Implementation Guide**
+            - 12-week structured plan
+            - Weekly checklists
+            - Progress tracking
+            """)
+        
         return
 
     twin = st.session_state.digital_twin
 
-    col1, col2 = st.columns([1, 1])
+    # Show current state summary
+    st.markdown("### 📊 Your Current State")
+    
+    col1, col2, col3, col4 = st.columns(4)
+
+    wellness_score = twin._calculate_wellness_score()
+    current_bio_age = twin.current_outcomes.get('biological_age_acceleration', 0)
+    current_life_sat = twin.current_outcomes.get('life_satisfaction_score', 0)
+    
+    # Enhanced current state display
+    with col1:
+        score_color = "#4caf50" if wellness_score >= 75 else "#2196f3" if wellness_score >= 60 else "#ff9800" if wellness_score >= 45 else "#f44336"
+        st.markdown(f"""
+        <div style="background: {score_color}20; padding: 1rem; border-radius: 0.5rem; text-align: center;">
+            <div style="font-size: 1.8rem; font-weight: bold; color: {score_color};">{wellness_score:.0f}</div>
+            <div style="font-size: 0.8rem; color: #666;">Wellness Score</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        bio_color = "#4caf50" if current_bio_age <= 0 else "#f44336" if current_bio_age >= 2 else "#ff9800"
+        st.markdown(f"""
+        <div style="background: {bio_color}20; padding: 1rem; border-radius: 0.5rem; text-align: center;">
+            <div style="font-size: 1.8rem; font-weight: bold; color: {bio_color};">{current_bio_age:+.1f}</div>
+            <div style="font-size: 0.8rem; color: #666;">Bio Age (years)</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col3:
+        sat_color = "#4caf50" if current_life_sat >= 7 else "#2196f3" if current_life_sat >= 5 else "#ff9800"
+        st.markdown(f"""
+        <div style="background: {sat_color}20; padding: 1rem; border-radius: 0.5rem; text-align: center;">
+            <div style="font-size: 1.8rem; font-weight: bold; color: {sat_color};">{current_life_sat:.1f}</div>
+            <div style="font-size: 0.8rem; color: #666;">Life Satisfaction</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col4:
+        # Calculate potential improvement
+        potential = max(0, 75 - wellness_score)
+        st.markdown(f"""
+        <div style="background: #2196f320; padding: 1rem; border-radius: 0.5rem; text-align: center;">
+            <div style="font-size: 1.8rem; font-weight: bold; color: #2196f3;">{potential:.0f}</div>
+            <div style="font-size: 0.8rem; color: #666;">Improvement Potential</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("---")
+    
+    # Goal setting section with better UX
+    st.markdown("### 🎯 Set Your Wellness Goals")
+    
+    # Preset goal templates
+    goal_template = st.selectbox(
+        "Choose a goal template (or customize below)",
+        [
+            "Custom Goals",
+            "🌟 Optimize Everything - Maximize wellness",
+            "⚡ Quick Wins - Easy improvements first",
+            "🎯 Focused Approach - Target specific areas",
+            "🌱 Gentle Start - Small sustainable changes"
+        ]
+    )
+    
+    # Set default goals based on template
+    if goal_template == "🌟 Optimize Everything - Maximize wellness":
+        default_bio = -2.0
+        default_life = 8.5
+        st.info("💡 This template aims for maximum improvement across all areas")
+    elif goal_template == "⚡ Quick Wins - Easy improvements first":
+        default_bio = max(-1.5, current_bio_age - 1.0)
+        default_life = min(8.0, current_life_sat + 1.0)
+        st.info("💡 This template focuses on achievable improvements in 8-12 weeks")
+    elif goal_template == "🎯 Focused Approach - Target specific areas":
+        default_bio = max(-1.0, current_bio_age - 0.5)
+        default_life = min(7.5, current_life_sat + 0.5)
+        st.info("💡 This template targets 1-2 key behaviors for significant impact")
+    elif goal_template == "🌱 Gentle Start - Small sustainable changes":
+        default_bio = max(-0.5, current_bio_age - 0.3)
+        default_life = min(7.0, current_life_sat + 0.3)
+        st.info("💡 This template prioritizes sustainability over speed")
+    else:
+        default_bio = -1.0
+        default_life = 8.0
+
+    col1, col2 = st.columns(2)
 
     with col1:
-        st.markdown("### 🎯 Set Your Wellness Goals")
-
         bio_age_target = st.slider(
             "Target Biological Age Acceleration (years)",
-            -3.0, 3.0, -1.0,
-            help="Negative values mean younger biological age than chronological age"
+            -3.0, 3.0, float(default_bio), 0.1,
+            help="Negative values mean younger biological age. -2.0 is ambitious but achievable."
         )
-
-        life_satisfaction_target = st.slider(
-            "Target Life Satisfaction Score (1-10)",
-            1.0, 10.0, 8.0,
-            help="Higher scores indicate greater life satisfaction"
-        )
-
-        optimize_button = st.button("🚀 Optimize My Wellness Plan", type="primary", use_container_width=True)
+        
+        bio_gap = bio_age_target - current_bio_age
+        if bio_gap < -1.5:
+            st.success(f"🎯 Ambitious goal! This requires {abs(bio_gap):.1f} years improvement.")
+        elif bio_gap < -0.5:
+            st.info(f"📈 Moderate goal. Aiming for {abs(bio_gap):.1f} years improvement.")
+        elif bio_gap < 0:
+            st.info(f"🌱 Conservative goal. Small {abs(bio_gap):.1f} years improvement.")
+        else:
+            st.warning("⚠️ This goal doesn't improve your biological age. Consider setting a lower target.")
 
     with col2:
-        st.markdown("### 📊 Current Status")
-
-        wellness_score = twin._calculate_wellness_score()
-        current_bio_age = twin.current_outcomes.get('biological_age_acceleration', 0)
-        current_life_sat = twin.current_outcomes.get('life_satisfaction_score', 0)
-
-        st.metric("Current Wellness Score", f"{wellness_score:.1f}/100")
-        st.metric("Current Biological Age Acceleration", f"{current_bio_age:.1f} years")
-        st.metric("Current Life Satisfaction", f"{current_life_sat:.1f}/10")
-
-        # Show goal gaps
-        bio_gap = bio_age_target - current_bio_age
+        life_satisfaction_target = st.slider(
+            "Target Life Satisfaction Score (1-10)",
+            1.0, 10.0, float(default_life), 0.1,
+            help="Higher scores indicate greater life satisfaction. 8+ is excellent."
+        )
+        
         life_gap = life_satisfaction_target - current_life_sat
-
-        if bio_gap < 0:
-            st.success(f"🎯 Biological age goal: {bio_gap:.1f} years improvement needed")
+        if life_gap > 2:
+            st.success(f"🎯 Ambitious goal! Aiming for {life_gap:.1f} points increase.")
+        elif life_gap > 1:
+            st.info(f"📈 Moderate goal. {life_gap:.1f} points improvement expected.")
+        elif life_gap > 0:
+            st.info(f"� Conservative goal. {life_gap:.1f} points increase.")
         else:
-            st.info(f"📈 Biological age goal: {bio_gap:.1f} years beyond current")
+            st.warning("⚠️ This goal doesn't improve life satisfaction. Consider setting a higher target.")
 
-        if life_gap > 0:
-            st.success(f"🎯 Life satisfaction goal: {life_gap:.1f} points improvement needed")
-        else:
-            st.info(f"📈 Life satisfaction goal: {life_gap:.1f} points beyond current")
+    # Advanced options (collapsible)
+    with st.expander("⚙️ Advanced Options"):
+        col1, col2 = st.columns(2)
+        with col1:
+            duration_weeks = st.slider("Plan Duration (weeks)", 4, 24, 12,
+                                      help="How long should your intervention plan run?")
+        with col2:
+            intensity = st.select_slider("Change Intensity", 
+                                        options=['gentle', 'moderate', 'intensive'],
+                                        value='moderate',
+                                        help="How aggressive should the recommendations be?")
+
+    optimize_button = st.button("🚀 Optimize My Wellness Plan", type="primary", width="stretch")
 
     if optimize_button:
         with st.spinner("🧬 AI analyzing your profile and creating personalized optimization plan..."):
@@ -953,21 +1304,28 @@ def show_optimization_page():
 
                 if results['optimization_successful']:
                     st.success("✅ Optimization completed! Your personalized wellness transformation plan is ready.")
+                    
+                    # Store optimization date
+                    st.session_state.optimization_date = datetime.now()
 
                     plan = handle_post_optimization(
                         twin,
                         results,
-                        targets
+                        targets,
+                        duration_weeks=duration_weeks,
+                        intensity_preference=intensity
                     )
 
                     # Show comprehensive optimization results
                     show_optimization_results(twin, results, targets, plan)
 
                 else:
-                    st.error("❌ Optimization failed. Please try adjusting your goals or contact support.")
+                    st.error("❌ Optimization failed. Your goals may be too ambitious for your current profile.")
+                    st.info("💡 Try: 1) Reducing goal targets, 2) Extending plan duration, or 3) Lowering intensity")
 
             except Exception as e:
                 st.error(f"❌ Error during optimization: {str(e)}")
+                st.error("Please try again with different parameters. If issue persists, contact support.")
 
 def show_optimization_results(twin, results, targets, plan):
     """Display comprehensive optimization results with current vs optimized comparison"""
@@ -1387,7 +1745,7 @@ def create_lifestyle_comparison_chart(current_behaviors, recommendations):
                     f'{improvement:.1f}', ha='center', va='bottom', fontsize=8)
         
         plt.tight_layout()
-        st.pyplot(fig, use_container_width=True)
+        st.pyplot(fig, width=900)
         
         # Add interpretation
         st.markdown("""
@@ -1602,7 +1960,7 @@ def render_intervention_plan(plan, planner: InterventionPlanner):
 
     if phase_rows:
         phase_df = pd.DataFrame(phase_rows)
-        st.dataframe(phase_df, use_container_width=True)
+        st.dataframe(phase_df, width="stretch")
 
     st.info("💡 **Next Steps:** Go to the 'Progress Tracking' tab to view detailed weekly checklists and log your progress!")
     
@@ -1623,12 +1981,33 @@ def render_intervention_plan(plan, planner: InterventionPlanner):
 
 
 def show_progress_page():
-    """Page for tracking progress"""
+    """Enhanced page for tracking progress with better UX"""
 
-    st.markdown('<div class="section-header">📊 Progress Tracking</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">� Progress Tracking & Simulation</div>', unsafe_allow_html=True)
 
     if st.session_state.digital_twin is None:
         st.warning("⚠️ Please create your digital twin first.")
+        
+        # Show what they'll get
+        st.markdown("---")
+        st.markdown("### 📈 What You'll Be Able To Track:")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown("""
+            **📊 Progress Simulation**
+            - See predicted outcomes week by week
+            - Compare different compliance levels
+            - Visualize your health trajectory
+            """)
+        with col2:
+            st.markdown("""
+            **✅ Weekly Checklists**
+            - Day-by-day action plans
+            - Time estimates for each activity
+            - Progress monitoring tools
+            """)
+        
         return
 
     twin = st.session_state.digital_twin
@@ -1636,343 +2015,440 @@ def show_progress_page():
 
     if plan is None:
         st.warning("⚠️ Run an optimization to generate your intervention plan before tracking progress.")
+        
+        # Helpful guidance
+        st.info("💡 Go to the **Optimize Wellness** page to create your personalized action plan first.")
         return
 
     planner = st.session_state.intervention_planner
 
-    st.markdown("### � Weekly Checklist Preview")
-    total_weeks = len(plan.phases)
-
-    if total_weeks:
-        selected_week = st.selectbox(
-            "Choose a week from your plan",
-            list(range(1, total_weeks + 1)),
-            key="progress_week_selector"
-        )
-
-        if selected_week not in st.session_state.weekly_checklists:
-            checklist = planner.generate_weekly_checklist(plan, selected_week)
-            st.session_state.weekly_checklists[selected_week] = checklist
-        else:
-            checklist = st.session_state.weekly_checklists[selected_week]
-
-        if 'error' in checklist:
-            st.warning(checklist['error'])
-        else:
-            st.markdown(f"**Phase:** {checklist['phase']} | **Focus:** {checklist['focus']}")
-            st.markdown(f"**Estimated weekly time:** {checklist['total_time_estimate']} minutes")
-
-            day_columns = st.columns(3)
-            for idx, (day, actions) in enumerate(checklist['daily_actions'].items()):
-                column = day_columns[idx % 3]
-                with column:
-                    # Simple day header with weekend indicator
-                    weekend_emoji = "🌿" if day in ['Saturday', 'Sunday'] else "💪"
-                    st.markdown(f"**{weekend_emoji} {day}**")
-                    
-                    if actions:
-                        for action in actions:
-                            difficulty = "●" if action['difficulty'] <= 2 else "●●" if action['difficulty'] <= 3 else "●●●"
-                            st.markdown(f"• {action['action']} *({action['time_minutes']}min, {difficulty})*")
-                    else:
-                        st.markdown("*� Rest & recovery day*")
-
-            st.markdown("**Weekly goals:**")
-            for behavior, goal in checklist['weekly_goals'].items():
-                st.markdown(f"- {behavior.replace('_', ' ').title()}: {goal}")
-    else:
-        st.info("Your plan does not include detailed weekly phases yet. Try regenerating with a longer duration.")
-
-    st.markdown("### �📈 Simulate Progress Over Time")
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-        weeks_to_simulate = st.slider("Weeks to simulate", 1, 12, 4, key="simulation_weeks")
-        compliance_level = st.selectbox(
-            "Compliance Level",
-            ["High (90%)", "Good (75%)", "Moderate (60%)", "Low (40%)"],
-            index=1,
-            key="compliance_selector"
-        )
-
-        # Map compliance level to actual percentage
-        compliance_map = {
-            "High (90%)": 0.9,
-            "Good (75%)": 0.75,
-            "Moderate (60%)": 0.6,
-            "Low (40%)": 0.4
-        }
-        compliance_rate = compliance_map[compliance_level]
-
-    with col2:
-        st.markdown("### 🎯 Simulation Parameters")
-        st.write(f"**Duration:** {weeks_to_simulate} weeks")
-        st.write(f"**Compliance:** {compliance_rate:.0%}")
-        st.write(f"**Plan Intensity:** Based on your optimization results")
-
-        simulate_button = st.button("▶️ Run Progress Simulation", type="primary", use_container_width=True)
-
-    if simulate_button:
-        with st.spinner(f"Simulating {weeks_to_simulate} weeks of progress..."):
-            opt_results = st.session_state.optimization_results
-            if opt_results and 'optimal_behavior_changes' in opt_results:
-                target_changes = opt_results['optimal_behavior_changes']
-            else:
-                target_changes = {
-                    'motion_days_week': 1,
-                    'diet_mediterranean_score': 0.5,
-                    'meditation_minutes_week': 15,
-                    'social_connections_count': 1
-                }
-
-            monitor = ProgressMonitor(twin.person_id, asdict(plan))
-            st.session_state.progress_monitor = monitor
-
-            progress_data = []
-            current_date = datetime.now()
-
-            for week in range(weeks_to_simulate + 1):
-                behaviors = twin.current_behaviors.copy()
-
-                if week > 0:
-                    for behavior, target_change in target_changes.items():
-                        current_value = behaviors.get(behavior)
-                        if isinstance(current_value, (int, float)):
-                            random_factor = 0.8 + np.random.random() * 0.4
-                            actual_change = target_change * compliance_rate * random_factor
-                            behaviors[behavior] = max(0, current_value + actual_change)
-
-                    twin.update_actual_behaviors(behaviors, current_date)
-
-                wellness_score = twin._calculate_wellness_score()
-                metrics = {
-                    'wellness_score': wellness_score,
-                    'biological_age_acceleration': twin.current_outcomes.get('biological_age_acceleration', 0),
-                    'life_satisfaction_score': twin.current_outcomes.get('life_satisfaction_score', 0)
-                }
-
-                compliance_value = 1.0 if week == 0 else compliance_rate
-                monitor.record_progress(
-                    metrics,
-                    compliance_value,
-                    measurement_date=current_date,
-                    data_source='simulation'
-                )
-
-                progress_data.append({
-                    'week': week,
-                    'date': current_date.strftime('%Y-%m-%d'),
-                    'wellness_score': wellness_score,
-                    'behaviors': behaviors.copy(),
-                    'metrics': metrics.copy()
-                })
-
-                current_date += timedelta(weeks=1)
-
-            st.session_state.progress_history = progress_data
-
-        st.success("✅ Progress simulation completed!")
-
-        # Display results
-        st.markdown("### 📊 Progress Results")
-
-        # Create progress dataframe
-        df_progress = pd.DataFrame(progress_data)
-
-        col1, col2 = st.columns(2)
-
-        with col1:
-            # Wellness score over time
-            fig, ax = plt.subplots(figsize=(10, 6))
-            ax.plot(df_progress['week'], df_progress['wellness_score'], marker='o', linewidth=2, markersize=6)
-            ax.set_xlabel('Week')
-            ax.set_ylabel('Wellness Score')
-            ax.set_title('Wellness Score Progress')
-            ax.grid(True, alpha=0.3)
-            ax.set_ylim(0, 100)
-            st.pyplot(fig, use_container_width=True)
-
-        with col2:
-            # Key behavior changes
-            st.markdown("#### 🔄 Behavior Changes")
-
-            initial_behaviors = progress_data[0]['behaviors']
-            final_behaviors = progress_data[-1]['behaviors']
-
-            key_behaviors = ['motion_days_week', 'diet_mediterranean_score',
-                           'meditation_minutes_week', 'social_connections_count']
-
-            for behavior in key_behaviors:
-                if behavior in initial_behaviors and behavior in final_behaviors:
-                    initial = initial_behaviors[behavior]
-                    final = final_behaviors[behavior]
-                    
-                    # Only process numeric values
-                    if isinstance(initial, (int, float)) and isinstance(final, (int, float)):
-                        change = final - initial
-
-                        if abs(change) > 0.1:
-                            behavior_name = behavior.replace('_', ' ').title()
-                            st.metric(
-                                f"{behavior_name}",
-                                f"{final:.1f}",
-                                f"{change:+.1f}",
-                                delta_color="normal" if change > 0 else "inverse"
-                            )
-
-        # Progress summary with detailed insights
-        initial_score = progress_data[0]['wellness_score']
-        final_score = progress_data[-1]['wellness_score']
-        improvement = final_score - initial_score
-
-        st.markdown("---")
-        st.markdown("### 🎯 Progress Summary & Impact Analysis")
+    # Create tabs for better organization
+    tab1, tab2, tab3 = st.tabs(["📊 Simulate Progress", "✅ Weekly Checklist", "📈 Track Real Progress"])
+    
+    with tab1:
+        st.markdown("### 🔮 See Your Future: Progress Simulation")
         
-        col1, col2, col3, col4 = st.columns(4)
-
+        st.info("""
+        💡 **What This Shows:** This simulation predicts how your health will improve if you follow the plan. 
+        Adjust compliance to see how commitment level affects results!
+        """)
+        
+        col1, col2, col3 = st.columns(3)
+        
         with col1:
-            st.metric("Starting Wellness Score", f"{initial_score:.1f}/100")
+            weeks_to_simulate = st.slider("📅 Simulation Duration", 1, 24, 12, 
+                                         help="How many weeks into the future to simulate")
+        
         with col2:
-            st.metric("Final Wellness Score", f"{final_score:.1f}/100")
+            compliance_level = st.select_slider(
+                "💪 Your Commitment Level",
+                options=["Low (40%)", "Moderate (60%)", "Good (75%)", "High (90%)", "Perfect (100%)"],
+                value="Good (75%)",
+                help="How closely will you follow the plan?"
+            )
+            
+            # Map compliance level to actual percentage
+            compliance_map = {
+                "Low (40%)": 0.4,
+                "Moderate (60%)": 0.6,
+                "Good (75%)": 0.75,
+                "High (90%)": 0.9,
+                "Perfect (100%)": 1.0
+            }
+            compliance_rate = compliance_map[compliance_level]
+        
         with col3:
-            st.metric("Total Improvement", f"{improvement:+.1f} points")
-        with col4:
-            weekly_rate = improvement / weeks_to_simulate if weeks_to_simulate > 0 else 0
-            st.metric("Weekly Progress Rate", f"{weekly_rate:+.1f} pts/week")
+            # Show compliance impact
+            compliance_color = "#4caf50" if compliance_rate >= 0.75 else "#ff9800" if compliance_rate >= 0.6 else "#f44336"
+            st.markdown(f"""
+            <div style="background: {compliance_color}20; padding: 1rem; border-radius: 0.5rem; text-align: center; border: 2px solid {compliance_color};">
+                <div style="font-size: 2rem; font-weight: bold; color: {compliance_color};">{compliance_rate:.0%}</div>
+                <div style="font-size: 0.9rem; color: #666;">Compliance Rate</div>
+                <div style="font-size: 0.75rem; color: {compliance_color}; margin-top: 0.3rem;">
+                    {'Excellent! Maximum results expected' if compliance_rate >= 0.75 else 'Good progress expected' if compliance_rate >= 0.6 else 'Limited improvement expected'}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        simulate_button = st.button("🚀 Run Simulation", type="primary", width="stretch")
 
-        # Detailed progress interpretation
-        st.markdown("### 📊 What These Results Mean")
-        
-        if improvement > 5:
-            st.success(f"""
-            🎉 **Excellent Progress!** Your wellness score improved by {improvement:.1f} points over {weeks_to_simulate} weeks.
-            
-            **What this means:**
-            - You're on track to achieve your wellness goals
-            - Your compliance level of {compliance_rate:.0%} is working well
-            - Continue with your current approach
-            """)
-        elif improvement > 0:
-            st.info(f"""
-            📈 **Good Progress!** Your wellness score improved by {improvement:.1f} points over {weeks_to_simulate} weeks.
-            
-            **What this means:**
-            - Steady improvement in the right direction
-            - Consider increasing compliance for faster results
-            - Focus on the highest-impact behaviors
-            """)
-        elif improvement > -2:
-            st.warning(f"""
-            📊 **Stable Progress** Your wellness score changed minimally ({improvement:+.1f} points).
-            
-            **What this means:**
-            - You're maintaining your current health level
-            - Results may take longer to show with {compliance_rate:.0%} compliance
-            - Consider focusing on 1-2 key behaviors first
-            """)
-        else:
-            st.error(f"""
-            ⚠️ **Concerning Trend** Your wellness score decreased by {abs(improvement):.1f} points.
-            
-            **What this means:**
-            - Your current approach may need adjustment
-            - Consider reducing the intensity of changes
-            - Focus on the most feasible behaviors first
-            """)
+        if simulate_button:
+            with st.spinner(f"🔮 Simulating {weeks_to_simulate} weeks of progress..."):
+                opt_results = st.session_state.optimization_results
+                if opt_results and 'optimal_behavior_changes' in opt_results:
+                    target_changes = opt_results['optimal_behavior_changes']
+                else:
+                    target_changes = {
+                        'motion_days_week': 1,
+                        'diet_mediterranean_score': 0.5,
+                        'meditation_minutes_week': 15,
+                        'social_connections_count': 1
+                    }
 
-        # Show behavior-specific insights
-        st.markdown("---")
-        st.markdown("### 🔍 Behavior-Specific Insights")
-        
-        initial_behaviors = progress_data[0]['behaviors']
-        final_behaviors = progress_data[-1]['behaviors']
-        
-        # Calculate behavior changes and rank by improvement
-        behavior_changes = []
-        for behavior in initial_behaviors:
-            if behavior in final_behaviors:
-                initial_val = initial_behaviors[behavior]
-                final_val = final_behaviors[behavior]
-                
-                # Only process numeric values
-                if isinstance(initial_val, (int, float)) and isinstance(final_val, (int, float)):
-                    change = final_val - initial_val
-                    
-                    if abs(change) > 0.1:
-                        behavior_changes.append({
-                            'behavior': behavior,
-                            'initial': initial_val,
-                            'final': final_val,
-                            'change': change,
-                            'percent_change': (change / initial_val * 100) if initial_val > 0 else 0
-                        })
-        
-        # Sort by absolute change
-        behavior_changes.sort(key=lambda x: abs(x['change']), reverse=True)
-        
-        if behavior_changes:
-            col1, col2 = st.columns(2)
+                monitor = ProgressMonitor(twin.person_id, asdict(plan))
+                st.session_state.progress_monitor = monitor
+
+                progress_data = []
+                current_date = datetime.now()
+
+                for week in range(weeks_to_simulate + 1):
+                    behaviors = twin.current_behaviors.copy()
+
+                    if week > 0:
+                        for behavior, target_change in target_changes.items():
+                            current_value = behaviors.get(behavior)
+                            if isinstance(current_value, (int, float)):
+                                # Add realistic variation
+                                random_factor = 0.8 + np.random.random() * 0.4
+                                actual_change = target_change * compliance_rate * random_factor
+                                behaviors[behavior] = max(0, current_value + actual_change)
+
+                        twin.update_actual_behaviors(behaviors, current_date)
+
+                    wellness_score = twin._calculate_wellness_score()
+                    metrics = {
+                        'wellness_score': wellness_score,
+                        'biological_age_acceleration': twin.current_outcomes.get('biological_age_acceleration', 0),
+                        'life_satisfaction_score': twin.current_outcomes.get('life_satisfaction_score', 0)
+                    }
+
+                    compliance_value = 1.0 if week == 0 else compliance_rate
+                    monitor.record_progress(
+                        metrics,
+                        compliance_value,
+                        measurement_date=current_date,
+                        data_source='simulation'
+                    )
+
+                    progress_data.append({
+                        'week': week,
+                        'date': current_date.strftime('%Y-%m-%d'),
+                        'wellness_score': wellness_score,
+                        'behaviors': behaviors.copy(),
+                        'metrics': metrics.copy()
+                    })
+
+                    current_date += timedelta(weeks=1)
+
+                st.session_state.progress_history = progress_data
+
+            st.success("✅ Progress simulation completed!")
+
+            # Display results with enhanced visuals
+            st.markdown("---")
+            st.markdown("### 📊 Your Predicted Health Transformation")
+
+            # Summary cards
+            initial_score = progress_data[0]['wellness_score']
+            final_score = progress_data[-1]['wellness_score']
+            score_change = final_score - initial_score
+            
+            initial_bio = progress_data[0]['metrics']['biological_age_acceleration']
+            final_bio = progress_data[-1]['metrics']['biological_age_acceleration']
+            bio_change = final_bio - initial_bio
+            
+            initial_life = progress_data[0]['metrics']['life_satisfaction_score']
+            final_life = progress_data[-1]['metrics']['life_satisfaction_score']
+            life_change = final_life - initial_life
+            
+            col1, col2, col3 = st.columns(3)
             
             with col1:
-                st.markdown("**� Biggest Improvements**")
-                positive_changes = [b for b in behavior_changes if b['change'] > 0][:3]
-                
-                for change in positive_changes:
-                    behavior_name = change['behavior'].replace('_', ' ').title()
-                    st.markdown(f"""
-                    <div class="recommendation-card">
-                        <strong>{behavior_name}</strong><br>
-                        {change['initial']:.1f} → {change['final']:.1f} 
-                        (+{change['change']:.1f}, {change['percent_change']:+.0f}%)<br>
-                        <small>✅ Great progress on this behavior!</small>
+                score_color = "#4caf50" if score_change > 10 else "#2196f3" if score_change > 5 else "#ff9800"
+                st.markdown(f"""
+                <div style="background: {score_color}20; padding: 1.5rem; border-radius: 0.5rem; text-align: center; border: 2px solid {score_color};">
+                    <div style="font-size: 2rem;">💪</div>
+                    <div style="font-size: 1.5rem; font-weight: bold; color: {score_color};">{score_change:+.1f}</div>
+                    <div style="font-size: 0.9rem; color: #666;">Wellness Score Change</div>
+                    <div style="font-size: 0.8rem; color: {score_color}; margin-top: 0.3rem;">
+                        {initial_score:.1f} → {final_score:.1f}
                     </div>
-                    """, unsafe_allow_html=True)
+                </div>
+                """, unsafe_allow_html=True)
             
             with col2:
-                st.markdown("**⚠️ Areas Needing Attention**")
-                negative_changes = [b for b in behavior_changes if b['change'] < 0][:3]
+                bio_color = "#4caf50" if bio_change < -0.5 else "#2196f3" if bio_change < 0 else "#ff9800"
+                st.markdown(f"""
+                <div style="background: {bio_color}20; padding: 1.5rem; border-radius: 0.5rem; text-align: center; border: 2px solid {bio_color};">
+                    <div style="font-size: 2rem;">🧬</div>
+                    <div style="font-size: 1.5rem; font-weight: bold; color: {bio_color};">{bio_change:+.1f} yrs</div>
+                    <div style="font-size: 0.9rem; color: #666;">Bio Age Change</div>
+                    <div style="font-size: 0.8rem; color: {bio_color}; margin-top: 0.3rem;">
+                        {initial_bio:+.1f} → {final_bio:+.1f}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col3:
+                life_color = "#4caf50" if life_change > 1 else "#2196f3" if life_change > 0 else "#ff9800"
+                st.markdown(f"""
+                <div style="background: {life_color}20; padding: 1.5rem; border-radius: 0.5rem; text-align: center; border: 2px solid {life_color};">
+                    <div style="font-size: 2rem;">😊</div>
+                    <div style="font-size: 1.5rem; font-weight: bold; color: {life_color};">{life_change:+.1f}</div>
+                    <div style="font-size: 0.9rem; color: #666;">Life Satisfaction Change</div>
+                    <div style="font-size: 0.8rem; color: {life_color}; margin-top: 0.3rem;">
+                        {initial_life:.1f} → {final_life:.1f}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            # Interpretation
+            st.markdown("---")
+            st.markdown("### 💡 What This Means")
+            
+            if score_change > 15:
+                st.success(f"🌟 **Outstanding transformation!** With {compliance_rate:.0%} compliance for {weeks_to_simulate} weeks, you could improve your wellness score by {score_change:.1f} points - this is life-changing!")
+            elif score_change > 10:
+                st.success(f"✅ **Excellent progress!** Your wellness score could improve by {score_change:.1f} points in {weeks_to_simulate} weeks.")
+            elif score_change > 5:
+                st.info(f"📈 **Good improvement!** Your wellness score could increase by {score_change:.1f} points.")
+            else:
+                st.warning(f"📊 **Modest improvement.** Try increasing compliance or extending duration for better results.")
+            
+            if bio_change < -1:
+                st.success(f"🧬 **Amazing anti-aging effect!** You could reverse biological aging by {abs(bio_change):.1f} years!")
+            elif bio_change < -0.5:
+                st.success(f"🧬 **Great biological age improvement!** You could reduce aging by {abs(bio_change):.1f} years.")
+            
+            # Create progress dataframe
+            df_progress = pd.DataFrame(progress_data)
+
+            # Visualization
+            st.markdown("---")
+            st.markdown("### 📈 Progress Visualization")
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+                # Wellness score over time
+                fig, ax = plt.subplots(figsize=(10, 6))
+                ax.plot(df_progress['week'], df_progress['wellness_score'], 
+                       marker='o', linewidth=3, markersize=8, color='#2196f3')
+                ax.fill_between(df_progress['week'], df_progress['wellness_score'], 
+                               alpha=0.3, color='#2196f3')
+                ax.set_xlabel('Week', fontsize=12)
+                ax.set_ylabel('Wellness Score', fontsize=12)
+                ax.set_title('Your Wellness Journey', fontsize=14, fontweight='bold')
+                ax.grid(True, alpha=0.3)
+                ax.set_ylim(0, 100)
                 
-                if negative_changes:
-                    for change in negative_changes:
-                        behavior_name = change['behavior'].replace('_', ' ').title()
+                # Add annotations
+                ax.annotate(f'Start: {initial_score:.1f}', 
+                           xy=(0, initial_score), xytext=(1, initial_score+5),
+                           arrowprops=dict(arrowstyle='->', color='red'),
+                           fontsize=10, color='red')
+                ax.annotate(f'End: {final_score:.1f}', 
+                           xy=(weeks_to_simulate, final_score), 
+                           xytext=(weeks_to_simulate-2, final_score+5),
+                           arrowprops=dict(arrowstyle='->', color='green'),
+                           fontsize=10, color='green')
+                
+                st.pyplot(fig, width="stretch")
+
+            with col2:
+                # Key behavior changes
+                st.markdown("#### 🔄 Behavior Evolution")
+
+                initial_behaviors = progress_data[0]['behaviors']
+                final_behaviors = progress_data[-1]['behaviors']
+
+                key_behaviors = ['motion_days_week', 'diet_mediterranean_score',
+                               'meditation_minutes_week', 'social_connections_count']
+
+                for behavior in key_behaviors:
+                    if behavior in initial_behaviors and behavior in final_behaviors:
+                        initial = initial_behaviors[behavior]
+                        final = final_behaviors[behavior]
+                        
+                        if isinstance(initial, (int, float)) and isinstance(final, (int, float)):
+                            change = final - initial
+
+                            if abs(change) > 0.1:
+                                behavior_name = behavior.replace('_', ' ').title()
+                                
+                                # Enhanced metric display
+                                change_pct = (change / initial * 100) if initial > 0 else 0
+                                st.metric(
+                                    f"{behavior_name}",
+                                    f"{final:.1f}",
+                                    f"{change:+.1f} ({change_pct:+.0f}%)",
+                                    delta_color="normal" if change > 0 else "inverse"
+                                )
+
+        # Milestone predictions
+        if 'progress_history' in st.session_state and st.session_state.progress_history:
+            st.markdown("---")
+            st.markdown("### 🎯 Predicted Milestones")
+            
+            # Find when key milestones are reached
+            milestones = []
+            for data in st.session_state.progress_history:
+                week = data['week']
+                score = data['wellness_score']
+                
+                if week > 0:
+                    if score >= 75 and st.session_state.progress_history[0]['wellness_score'] < 75:
+                        if not any(m['type'] == 'wellness_75' for m in milestones):
+                            milestones.append({'week': week, 'type': 'wellness_75', 
+                                             'message': '🌟 Wellness score reaches 75+ (Excellent range!)'})
+                    
+                    if score >= 60 and st.session_state.progress_history[0]['wellness_score'] < 60:
+                        if not any(m['type'] == 'wellness_60' for m in milestones):
+                            milestones.append({'week': week, 'type': 'wellness_60',
+                                             'message': '✅ Wellness score reaches 60+ (Good range!)'})
+            
+            if milestones:
+                for milestone in milestones:
+                    st.success(f"**Week {milestone['week']}:** {milestone['message']}")
+            else:
+                st.info("Continue following the plan to reach new health milestones!")
+    
+    with tab2:
+        st.markdown("### ✅ Your Weekly Action Plan")
+        
+        st.info("""
+        💡 **How To Use:** Select a week to see your day-by-day action plan. 
+        Each action includes time estimates and difficulty ratings to help you plan your day.
+        """)
+        
+        total_weeks = len(plan.phases) if plan.phases else 12
+
+        if total_weeks:
+            col1, col2 = st.columns([2, 1])
+            
+            with col1:
+                selected_week = st.selectbox(
+                    "📅 Select Week",
+                    list(range(1, min(total_weeks + 1, 25))),
+                    key="progress_week_selector",
+                    help=f"View your action plan for any week (Total: {total_weeks} weeks)"
+                )
+            
+            with col2:
+                # Week progress indicator
+                week_progress = (selected_week / total_weeks) * 100
+                st.markdown(f"""
+                <div style="background: #f5f5f5; padding: 1rem; border-radius: 0.5rem; text-align: center;">
+                    <div style="font-size: 1.2rem; font-weight: bold; color: #2196f3;">Week {selected_week}/{total_weeks}</div>
+                    <div style="font-size: 0.8rem; color: #666;">Plan Progress: {week_progress:.0f}%</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            if selected_week not in st.session_state.weekly_checklists:
+                checklist = planner.generate_weekly_checklist(plan, selected_week)
+                st.session_state.weekly_checklists[selected_week] = checklist
+            else:
+                checklist = st.session_state.weekly_checklists[selected_week]
+
+            if 'error' in checklist:
+                st.warning(checklist['error'])
+            else:
+                # Week overview
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    st.markdown(f"""
+                    <div style="background: #e3f2fd; padding: 1rem; border-radius: 0.5rem;">
+                        <div style="font-size: 0.9rem; color: #666;">Phase</div>
+                        <div style="font-size: 1.1rem; font-weight: bold; color: #2196f3;">{checklist['phase']}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                with col2:
+                    st.markdown(f"""
+                    <div style="background: #e8f5e9; padding: 1rem; border-radius: 0.5rem;">
+                        <div style="font-size: 0.9rem; color: #666;">Focus Area</div>
+                        <div style="font-size: 1.1rem; font-weight: bold; color: #4caf50;">{checklist['focus']}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                with col3:
+                    total_time = checklist['total_time_estimate']
+                    daily_avg = total_time / 7
+                    st.markdown(f"""
+                    <div style="background: #fff3e0; padding: 1rem; border-radius: 0.5rem;">
+                        <div style="font-size: 0.9rem; color: #666;">Weekly Time</div>
+                        <div style="font-size: 1.1rem; font-weight: bold; color: #ff9800;">{total_time} min</div>
+                        <div style="font-size: 0.8rem; color: #666;">~{daily_avg:.0f} min/day</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                st.markdown("---")
+                st.markdown("### 📅 Daily Action Plan")
+                
+                # Display days in a nice grid
+                for idx, (day, actions) in enumerate(checklist['daily_actions'].items()):
+                    weekend = day in ['Saturday', 'Sunday']
+                    bg_color = "#f3e5f5" if weekend else "#e8f5e9"
+                    border_color = "#9c27b0" if weekend else "#4caf50"
+                    day_icon = "🌿" if weekend else "💪"
+                    
+                    with st.expander(f"{day_icon} **{day}**", expanded=(idx < 2)):
+                        if actions:
+                            total_day_time = sum(action['time_minutes'] for action in actions)
+                            st.markdown(f"**Daily commitment:** {total_day_time} minutes")
+                            st.markdown("---")
+                            
+                            for i, action in enumerate(actions, 1):
+                                difficulty = action['difficulty']
+                                diff_display = "🟢 Easy" if difficulty <= 2 else "🟡 Moderate" if difficulty <= 3 else "🔴 Challenging"
+                                
+                                st.markdown(f"""
+                                <div style="background: {bg_color}; padding: 0.8rem; margin: 0.5rem 0; border-radius: 0.5rem; border-left: 3px solid {border_color};">
+                                    <div style="font-weight: bold;">{i}. {action['action']}</div>
+                                    <div style="font-size: 0.85rem; color: #666; margin-top: 0.3rem;">
+                                        ⏱️ {action['time_minutes']} min • {diff_display}
+                                    </div>
+                                </div>
+                                """, unsafe_allow_html=True)
+                        else:
+                            st.markdown("""
+                            <div style="background: #e3f2fd; padding: 1rem; border-radius: 0.5rem; text-align: center;">
+                                <div style="font-size: 1.5rem;">🌿</div>
+                                <div style="color: #2196f3; font-weight: bold;">Rest & Recovery Day</div>
+                                <div style="font-size: 0.85rem; color: #666;">Take time to relax and recharge</div>
+                            </div>
+                            """, unsafe_allow_html=True)
+
+                st.markdown("---")
+                st.markdown("### 🎯 Weekly Goals")
+                
+                if checklist['weekly_goals']:
+                    for behavior, goal in checklist['weekly_goals'].items():
+                        behavior_name = behavior.replace('_', ' ').title()
+                        
+                        # Get appropriate icon
+                        if 'motion' in behavior.lower() or 'exercise' in behavior.lower():
+                            icon = "🏃"
+                        elif 'diet' in behavior.lower():
+                            icon = "🥗"
+                        elif 'sleep' in behavior.lower():
+                            icon = "😴"
+                        elif 'meditation' in behavior.lower():
+                            icon = "🧘"
+                        elif 'social' in behavior.lower():
+                            icon = "👥"
+                        else:
+                            icon = "📊"
+                        
                         st.markdown(f"""
-                        <div class="warning-card">
-                            <strong>{behavior_name}</strong><br>
-                            {change['initial']:.1f} → {change['final']:.1f} 
-                            ({change['change']:.1f}, {change['percent_change']:.0f}%)<br>
-                            <small>⚠️ This behavior moved in wrong direction</small>
+                        <div style="background: #f5f5f5; padding: 0.8rem; margin: 0.3rem 0; border-radius: 0.5rem;">
+                            {icon} <strong>{behavior_name}:</strong> {goal}
                         </div>
                         """, unsafe_allow_html=True)
                 else:
-                    st.success("🎉 No behaviors declined - excellent work!")
-
-        # Recommendations for next steps
-        st.markdown("---")
-        st.markdown("### 🎯 Recommended Next Steps")
-        
-        if improvement > 3:
-            st.markdown("""
-            **Continue Current Approach:**
-            - ✅ Your compliance level is working well
-            - ✅ Consider gradually increasing targets
-            - ✅ Add 1-2 new behaviors to optimize
-            """)
-        elif improvement > 0:
-            st.markdown("""
-            **Optimize Current Strategy:**
-            - 📈 Increase compliance to 80%+ for faster results
-            - 🎯 Focus on your top 3 highest-impact behaviors
-            - ⏰ Consider extending timeline to 8-12 weeks
-            """)
+                    st.info("No specific weekly goals set for this week.")
         else:
-            st.markdown("""
-            **Adjust Strategy:**
-            - 🔄 Reduce number of simultaneous changes
-            - 📝 Focus on 1-2 most feasible behaviors first
-            - 🤝 Consider additional support or accountability
-            - ⏰ Allow more time for each change to establish
-            """)
+            st.info("Your plan does not include detailed weekly phases yet. Try regenerating with a longer duration.")
+    
+    with tab3:
+        st.markdown("### 📊 Track Your Real Progress")
+        
+        st.info("""
+        💡 **Coming Soon:** Log your actual behaviors and see how you're tracking against the plan. 
+        For now, use the simulation tab to predict your progress!
+        """)
+
 
 def show_analytics_page():
     """Page for analytics and insights"""
@@ -2118,7 +2594,7 @@ def show_analytics_page():
             ])
 
             if not trends_df.empty:
-                st.dataframe(trends_df, use_container_width=True)
+                st.dataframe(trends_df, width="stretch")
 
                 # Trend visualization
                 fig, ax = plt.subplots(figsize=(10, 6))
@@ -2133,7 +2609,7 @@ def show_analytics_page():
                     for bar, change in zip(bars, trends_df['Change']):
                         bar.set_color('green' if change > 0 else 'red')
 
-                    st.pyplot(fig, use_container_width=True)
+                    st.pyplot(fig, width="stretch")
             else:
                 st.info("No significant behavior changes detected yet.")
         else:
@@ -2154,7 +2630,7 @@ def show_analytics_page():
                 for k, v in progress_report['outcome_trends'].items()
             ])
 
-            st.dataframe(outcomes_df, use_container_width=True)
+            st.dataframe(outcomes_df, width="stretch")
 
             # Key metrics display
             wellness_score = progress_report.get('current_wellness_score', 0)
@@ -2199,7 +2675,7 @@ def show_analytics_page():
                 ax.set_ylim(0, 1)
                 plt.xticks(rotation=45)
                 plt.tight_layout()
-                st.pyplot(fig, use_container_width=True)
+                st.pyplot(fig, width="stretch")
             
             with col2:
                 # Key metrics trend
@@ -2216,7 +2692,7 @@ def show_analytics_page():
                     ax.set_ylim(1, 10)
                     plt.xticks(rotation=45)
                     plt.tight_layout()
-                    st.pyplot(fig, use_container_width=True)
+                    st.pyplot(fig, width="stretch")
 
     # Population comparison (simulated)
     st.markdown("### 🌍 Population Comparison")
@@ -2246,7 +2722,7 @@ def show_analytics_page():
         ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 1,
                 f'{score:.1f}', ha='center', va='bottom')
 
-    st.pyplot(fig, use_container_width=True)
+    st.pyplot(fig, width=900)
 
     # Insights
     your_score = population_data['Your Score']
